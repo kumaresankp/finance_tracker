@@ -37,8 +37,8 @@ def dashboard_view(request):
     # ── Charts Data ──
     expense_categories = get_category_breakdown('expense', year, month)
     income_categories = get_category_breakdown('income', year, month)
-    monthly_trend = get_monthly_trend(6)
-    daily_trend = get_daily_expense_trend(30)
+    monthly_trend = get_monthly_trend(6, year, month)
+    daily_trend = get_daily_expense_trend(30, year, month)
     account_dist = get_account_distribution()
     top_categories = get_top_spending_categories(8, year, month)
     recent_transactions = get_recent_transactions(10)

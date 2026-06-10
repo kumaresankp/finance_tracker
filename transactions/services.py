@@ -63,17 +63,19 @@ def get_category_breakdown(transaction_type='expense', year=None, month=None):
     return list(transactions)
 
 
-def get_monthly_trend(months=6):
-    """Get monthly income/expense trend"""
+def get_monthly_trend(months=6, year=None, month=None):
+    """Get monthly income/expense trend ending at the given year/month"""
     from .models import Transaction
 
     today = timezone.now().date()
+    anchor_year = year or today.year
+    anchor_month = month or today.month
     result = []
 
     for i in range(months - 1, -1, -1):
-        # Calculate month offset
-        month = today.month - i
-        year = today.year
+        # Calculate month offset back from the anchor month
+        month = anchor_month - i
+        year = anchor_year
         while month <= 0:
             month += 12
             year -= 1
@@ -101,17 +103,28 @@ def get_monthly_trend(months=6):
     return result
 
 
-def get_daily_expense_trend(days=30):
-    """Get daily expense trend"""
+def get_daily_expense_trend(days=30, year=None, month=None):
+    """Get daily expense trend.
+
+    When year/month are given, returns every day of that month. Otherwise
+    falls back to the trailing `days` window ending today.
+    """
     from .models import Transaction
 
     today = timezone.now().date()
-    start_date = today - timedelta(days=days - 1)
+
+    if year and month:
+        start_date = date(year, month, 1)
+        last_day = calendar.monthrange(year, month)[1]
+        end_date = date(year, month, last_day)
+    else:
+        end_date = today
+        start_date = today - timedelta(days=days - 1)
 
     transactions = Transaction.objects.filter(
         transaction_type='expense',
         transaction_date__gte=start_date,
-        transaction_date__lte=today
+        transaction_date__lte=end_date
     ).values('transaction_date').annotate(
         total=Sum('amount')
     ).order_by('transaction_date')
@@ -120,7 +133,7 @@ def get_daily_expense_trend(days=30):
     date_map = {t['transaction_date']: float(t['total']) for t in transactions}
     result = []
     current = start_date
-    while current <= today:
+    while current <= end_date:
         result.append({
             'date': current.strftime('%b %d'),
             'amount': date_map.get(current, 0),

@@ -24,3 +24,4 @@ finance_backup_*.sqlite3
 .idea/
 .DS_Store
 Thumbs.db
+.claude

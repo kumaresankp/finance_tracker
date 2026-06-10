@@ -673,6 +673,128 @@
         .currency-value {
             font-variant-numeric: tabular-nums;
         }
+
+        /* ════════════════════════════════════════════ */
+        /* ── REFINED FINTECH POLISH ─────────────────── */
+        /* ════════════════════════════════════════════ */
+
+        /* Card headers: tighter, with eyebrow support */
+        .card { border-radius: 18px; }
+        .card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+        }
+        .card-header h5 {
+            font-size: 0.95rem;
+            font-weight: 700;
+            letter-spacing: -0.01em;
+        }
+        .card-header .card-eyebrow {
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: var(--text-muted);
+        }
+
+        /* Stat cards: accent rail + watermark + tabular figures */
+        .stat-card {
+            --accent: var(--primary);
+            isolation: isolate;
+        }
+        .stat-card::after {
+            content: '';
+            position: absolute;
+            inset: 0 auto 0 0;
+            width: 4px;
+            background: linear-gradient(180deg, var(--accent), color-mix(in srgb, var(--accent) 30%, transparent));
+            border-radius: 18px 0 0 18px;
+        }
+        .stat-card .stat-value { font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
+        .stat-card .stat-bg-icon { color: var(--accent); z-index: -1; }
+        .stat-card .stat-change {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+            padding: 0.2rem 0.55rem;
+            border-radius: 100px;
+            font-size: 0.72rem;
+            background: var(--border-color);
+        }
+        .stat-card .stat-change.positive { background: rgba(16,185,129,0.12); color: var(--success); }
+        .stat-card .stat-change.negative { background: rgba(239,68,68,0.12); color: var(--danger); }
+
+        /* Pill filter bar */
+        .filter-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 14px;
+            padding: 0.35rem 0.4rem;
+            box-shadow: var(--shadow-sm);
+        }
+        .filter-pill .bi-calendar3 { color: var(--text-muted); margin: 0 0.25rem 0 0.5rem; }
+        .filter-pill .form-select {
+            border: none;
+            background: transparent;
+            box-shadow: none !important;
+            font-weight: 600;
+            font-size: 0.85rem;
+            padding: 0.3rem 1.6rem 0.3rem 0.6rem;
+            width: auto;
+            color: var(--text-primary);
+        }
+        .filter-pill .filter-sep { width: 1px; height: 22px; background: var(--border-color); }
+
+        /* Soft list rows (top categories) */
+        .rank-row { transition: background 0.15s ease; border-radius: 12px; }
+        .rank-row:hover { background: rgba(99,102,241,0.05); }
+        .rank-bar { height: 6px; border-radius: 100px; background: var(--border-color); overflow: hidden; margin-top: 0.5rem; }
+        .rank-bar > span { display: block; height: 100%; border-radius: 100px; }
+
+        /* Doughnut center label overlay */
+        .donut-wrap { position: relative; }
+        .donut-center {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            pointer-events: none;
+            text-align: center;
+        }
+        .donut-center .dc-value {
+            font-size: 1.35rem;
+            font-weight: 800;
+            color: var(--text-primary);
+            line-height: 1;
+            letter-spacing: -0.02em;
+            font-variant-numeric: tabular-nums;
+        }
+        .donut-center .dc-label {
+            font-size: 0.68rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: var(--text-muted);
+            margin-top: 0.35rem;
+        }
+
+        /* Staggered entrance for grid children */
+        .stagger > [class*="col-"] { animation: fadeInUp 0.45s ease both; }
+        .stagger > [class*="col-"]:nth-child(1) { animation-delay: 0.02s; }
+        .stagger > [class*="col-"]:nth-child(2) { animation-delay: 0.08s; }
+        .stagger > [class*="col-"]:nth-child(3) { animation-delay: 0.14s; }
+        .stagger > [class*="col-"]:nth-child(4) { animation-delay: 0.20s; }
+
+        @media (prefers-reduced-motion: reduce) {
+            .stagger > [class*="col-"], .fade-in-up, .slide-in-right { animation: none !important; }
+        }
     </style>
 
     {% block extra_css %}{% endblock %}
@@ -997,9 +1119,47 @@ function getChartDefaults() {
     };
 }
 
-Chart.defaults.font.family = "'Inter', system-ui, sans-serif";
-Chart.defaults.plugins.legend.labels.usePointStyle = true;
-Chart.defaults.plugins.legend.labels.padding = 20;
+// ── CURRENCY FORMATTERS (shared) ────────────────────
+function fmtINR(n) {
+    return '₹' + new Intl.NumberFormat('en-IN', { maximumFractionDigits: 0 }).format(n || 0);
+}
+function fmtINRCompact(n) {
+    return '₹' + new Intl.NumberFormat('en-IN', {
+        notation: 'compact', maximumFractionDigits: 1
+    }).format(n || 0);
+}
+
+// ── CHART.JS GLOBAL DEFAULTS ────────────────────────
+(function () {
+    const dark = document.documentElement.getAttribute('data-bs-theme') === 'dark';
+    Chart.defaults.font.family = "'Inter', system-ui, sans-serif";
+    Chart.defaults.font.size = 12;
+    Chart.defaults.color = dark ? '#94a3b8' : '#64748b';
+    Chart.defaults.borderColor = dark ? 'rgba(148,163,184,0.12)' : 'rgba(15,23,42,0.06)';
+
+    Chart.defaults.plugins.legend.labels.usePointStyle = true;
+    Chart.defaults.plugins.legend.labels.padding = 18;
+    Chart.defaults.plugins.legend.labels.boxWidth = 8;
+    Chart.defaults.plugins.legend.labels.boxHeight = 8;
+
+    // Polished tooltips, theme-aware
+    const tt = Chart.defaults.plugins.tooltip;
+    tt.backgroundColor = dark ? 'rgba(2,6,23,0.92)' : 'rgba(15,23,42,0.92)';
+    tt.titleColor = '#f1f5f9';
+    tt.bodyColor = '#cbd5e1';
+    tt.borderColor = 'rgba(99,102,241,0.4)';
+    tt.borderWidth = 1;
+    tt.cornerRadius = 12;
+    tt.padding = 12;
+    tt.boxPadding = 6;
+    tt.usePointStyle = true;
+    tt.titleFont = { weight: '700', size: 12 };
+    tt.bodyFont = { weight: '500', size: 12 };
+
+    Chart.defaults.elements.point.radius = 0;
+    Chart.defaults.elements.point.hoverRadius = 5;
+    Chart.defaults.elements.line.borderWidth = 2.5;
+})();
 </script>
 
 {% block extra_js %}{% endblock %}

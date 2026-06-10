@@ -4,81 +4,83 @@
 {% block page_title %}Dashboard{% endblock %}
 
 {% block content %}
-<div class="page-header">
-    <h1>Dashboard</h1>
-    <p>Financial Overview & Analytics</p>
-</div>
-
-<!-- Month & Year Selector -->
-<div class="row mb-4">
-    <div class="col-md-6">
-        <div class="d-flex gap-2">
-            <select class="form-select form-select-sm" id="monthSelect" style="width: auto;">
-                {% for id, name in months %}
-                <option value="{{ id }}" {% if id == selected_month %}selected{% endif %}>{{ name }}</option>
-                {% endfor %}
-            </select>
-            <select class="form-select form-select-sm" id="yearSelect" style="width: auto;">
-                {% for y in years %}
-                <option value="{{ y }}" {% if y == selected_year %}selected{% endif %}>{{ y }}</option>
-                {% endfor %}
-            </select>
-            <button class="btn btn-sm btn-outline-secondary" onclick="updateDates()">Filter</button>
-        </div>
+<div class="page-header d-flex flex-wrap justify-content-between align-items-center gap-3">
+    <div>
+        <h1>Dashboard</h1>
+        <p>Financial overview & analytics</p>
+    </div>
+    <!-- Period Filter -->
+    <div class="filter-pill">
+        <i class="bi bi-calendar3"></i>
+        <select class="form-select" id="monthSelect" onchange="updateDates()" aria-label="Month">
+            {% for id, name in months %}
+            <option value="{{ id }}" {% if id == selected_month %}selected{% endif %}>{{ name }}</option>
+            {% endfor %}
+        </select>
+        <span class="filter-sep"></span>
+        <select class="form-select" id="yearSelect" onchange="updateDates()" aria-label="Year">
+            {% for y in years %}
+            <option value="{{ y }}" {% if y == selected_year %}selected{% endif %}>{{ y }}</option>
+            {% endfor %}
+        </select>
     </div>
 </div>
 
 <!-- Summary Cards -->
-<div class="row gap-3 mb-4">
+<div class="row gap-3 mb-4 stagger">
     <div class="col-md-3">
-        <div class="stat-card">
+        <div class="stat-card" style="--accent:#10b981;">
+            <i class="bi bi-arrow-up-circle stat-bg-icon"></i>
             <div class="stat-icon" style="background: rgba(16, 185, 129, 0.15); color: #10b981;">
                 <i class="bi bi-arrow-up-circle"></i>
             </div>
             <div class="stat-value">₹{{ monthly.income|floatformat:0 }}</div>
             <div class="stat-label">Income</div>
             <div class="stat-change {% if income_change >= 0 %}positive{% else %}negative{% endif %}">
-                <i class="bi {% if income_change >= 0 %}bi-graph-up{% else %}bi-graph-down{% endif %}"></i>
-                {{ income_change|floatformat:1 }}% vs prev month
+                <i class="bi {% if income_change >= 0 %}bi-arrow-up-short{% else %}bi-arrow-down-short{% endif %}"></i>
+                {{ income_change|floatformat:1 }}% vs prev
             </div>
         </div>
     </div>
     <div class="col-md-3">
-        <div class="stat-card">
+        <div class="stat-card" style="--accent:#ef4444;">
+            <i class="bi bi-arrow-down-circle stat-bg-icon"></i>
             <div class="stat-icon" style="background: rgba(239, 68, 68, 0.15); color: #ef4444;">
                 <i class="bi bi-arrow-down-circle"></i>
             </div>
             <div class="stat-value">₹{{ monthly.expense|floatformat:0 }}</div>
             <div class="stat-label">Expenses</div>
             <div class="stat-change {% if expense_change >= 0 %}negative{% else %}positive{% endif %}">
-                <i class="bi {% if expense_change <= 0 %}bi-graph-down{% else %}bi-graph-up{% endif %}"></i>
-                {{ expense_change|floatformat:1 }}% vs prev month
+                <i class="bi {% if expense_change <= 0 %}bi-arrow-down-short{% else %}bi-arrow-up-short{% endif %}"></i>
+                {{ expense_change|floatformat:1 }}% vs prev
             </div>
         </div>
     </div>
     <div class="col-md-3">
-        <div class="stat-card">
+        <div class="stat-card" style="--accent:#6366f1;">
+            <i class="bi bi-wallet2 stat-bg-icon"></i>
             <div class="stat-icon" style="background: rgba(99, 102, 241, 0.15); color: #6366f1;">
                 <i class="bi bi-wallet2"></i>
             </div>
             <div class="stat-value">₹{{ monthly.savings|floatformat:0 }}</div>
             <div class="stat-label">Net Savings</div>
-            <div class="stat-change" style="color: #6366f1;">
+            <div class="stat-change {% if monthly.savings >= 0 %}positive{% else %}negative{% endif %}">
                 <i class="bi bi-percent"></i>
-                {{ monthly.savings_rate|floatformat:1 }}%
+                {{ monthly.savings_rate|floatformat:1 }}% saved
             </div>
         </div>
     </div>
     <div class="col-md-3">
-        <div class="stat-card">
+        <div class="stat-card" style="--accent:#8b5cf6;">
+            <i class="bi bi-bank stat-bg-icon"></i>
             <div class="stat-icon" style="background: rgba(139, 92, 246, 0.15); color: #8b5cf6;">
                 <i class="bi bi-bank"></i>
             </div>
             <div class="stat-value">₹{{ total_balance|floatformat:0 }}</div>
             <div class="stat-label">Total Balance</div>
-            <div class="stat-change" style="color: #8b5cf6;">
+            <div class="stat-change" style="background: rgba(139,92,246,0.12); color:#8b5cf6;">
                 <i class="bi bi-safe"></i>
-                {{ total_accounts }} accounts
+                {{ total_accounts }} account{{ total_accounts|pluralize }}
             </div>
         </div>
     </div>
@@ -88,9 +90,10 @@
 <div class="row gap-3 mb-4">
     <!-- Monthly Trend -->
     <div class="col-lg-6">
-        <div class="card">
+        <div class="card h-100">
             <div class="card-header">
-                <h5 class="mb-0">6-Month Trend</h5>
+                <h5 class="mb-0">Income vs Expense</h5>
+                <span class="card-eyebrow">6-month trend</span>
             </div>
             <div class="card-body">
                 <div class="chart-container" style="height: 300px;">
@@ -102,13 +105,18 @@
 
     <!-- Expense by Category -->
     <div class="col-lg-6">
-        <div class="card">
+        <div class="card h-100">
             <div class="card-header">
                 <h5 class="mb-0">Expenses by Category</h5>
+                <span class="card-eyebrow">This period</span>
             </div>
             <div class="card-body">
-                <div class="chart-container" style="height: 300px;">
+                <div class="chart-container donut-wrap" style="height: 300px;">
                     <canvas id="expensePieChart"></canvas>
+                    <div class="donut-center">
+                        <span class="dc-value">₹{{ monthly.expense|floatformat:0 }}</span>
+                        <span class="dc-label">Total Spent</span>
+                    </div>
                 </div>
             </div>
         </div>
@@ -118,10 +126,11 @@
 <!-- Charts Row 2 -->
 <div class="row gap-3 mb-4">
     <!-- Daily Expense Trend -->
-    <div class="col-lg-6">
-        <div class="card">
+    <div class="col-lg-4">
+        <div class="card h-100">
             <div class="card-header">
-                <h5 class="mb-0">Daily Expense Trend (30 Days)</h5>
+                <h5 class="mb-0">Daily Expense Trend</h5>
+                <span class="card-eyebrow">Selected month</span>
             </div>
             <div class="card-body">
                 <div class="chart-container" style="height: 250px;">
@@ -131,15 +140,35 @@
         </div>
     </div>
 
-    <!-- Account Distribution -->
-    <div class="col-lg-6">
-        <div class="card">
+    <!-- Monthly Expense -->
+    <div class="col-lg-4">
+        <div class="card h-100">
             <div class="card-header">
-                <h5 class="mb-0">Balance by Account</h5>
+                <h5 class="mb-0">Monthly Expense</h5>
+                <span class="card-eyebrow">6-month trend</span>
             </div>
             <div class="card-body">
                 <div class="chart-container" style="height: 250px;">
+                    <canvas id="monthlyExpenseChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Account Distribution -->
+    <div class="col-lg-4">
+        <div class="card h-100">
+            <div class="card-header">
+                <h5 class="mb-0">Balance by Account</h5>
+                <span class="card-eyebrow">Current</span>
+            </div>
+            <div class="card-body">
+                <div class="chart-container donut-wrap" style="height: 250px;">
                     <canvas id="accountDonutChart"></canvas>
+                    <div class="donut-center">
+                        <span class="dc-value">₹{{ total_balance|floatformat:0 }}</span>
+                        <span class="dc-label">Total</span>
+                    </div>
                 </div>
             </div>
         </div>
@@ -153,27 +182,30 @@
         <div class="card">
             <div class="card-header">
                 <h5 class="mb-0">Top Spending Categories</h5>
+                <span class="card-eyebrow">This period</span>
             </div>
             <div class="card-body">
-                <div class="list-group list-group-flush">
+                <div class="d-flex flex-column gap-1">
                     {% for cat in top_categories %}
-                    <div class="list-group-item px-0 py-3">
+                    {% widthratio cat.total monthly.expense 100 as cat_pct %}
+                    <div class="rank-row px-2 py-2">
                         <div class="d-flex justify-content-between align-items-center">
                             <div class="d-flex align-items-center gap-3">
-                                <div class="icon-circle" style="background: {{ cat.category__color }}20; color: {{ cat.category__color }};">
-                                    <i class="bi {{ cat.category__icon }}"></i>
+                                <div class="icon-circle" style="background: {{ cat.category__color|default:'#6366f1' }}20; color: {{ cat.category__color|default:'#6366f1' }};">
+                                    <i class="bi {{ cat.category__icon|default:'bi-tag' }}"></i>
                                 </div>
                                 <div>
                                     <div class="fw-600">{{ cat.category__name|default:"Uncategorized" }}</div>
-                                    <small class="text-muted">{{ cat.count }} transactions</small>
+                                    <small class="text-muted">{{ cat.count }} transaction{{ cat.count|pluralize }}</small>
                                 </div>
                             </div>
                             <div class="text-end">
-                                <div class="fw-700">₹{{ cat.total|floatformat:0 }}</div>
-                                <small class="text-muted">
-                                    {% widthratio cat.total monthly.expense 100 %}%
-                                </small>
+                                <div class="fw-700 currency-value">₹{{ cat.total|floatformat:0 }}</div>
+                                <small class="text-muted">{{ cat_pct }}%</small>
                             </div>
+                        </div>
+                        <div class="rank-bar">
+                            <span style="width: {{ cat_pct }}%; background: {{ cat.category__color|default:'#6366f1' }};"></span>
                         </div>
                     </div>
                     {% empty %}
@@ -237,9 +269,32 @@
 {% block extra_js %}
 <script>
 const chartData = {{ chart_data_json|safe }};
-const defaults = getChartDefaults();
 
-// ── Monthly Trend Chart ──
+// Vertical gradient helper (scriptable) — fades a color from top to bottom.
+function vGradient(from, to) {
+    return (ctx) => {
+        const { chart } = ctx;
+        const { ctx: c, chartArea } = chart;
+        if (!chartArea) return from;
+        const g = c.createLinearGradient(0, chartArea.top, 0, chartArea.bottom);
+        g.addColorStop(0, from);
+        g.addColorStop(1, to);
+        return g;
+    };
+}
+
+const moneyTooltip = {
+    callbacks: {
+        label: (ctx) => `${ctx.dataset.label || ctx.label}: ${fmtINR(ctx.parsed.y ?? ctx.parsed)}`,
+    }
+};
+const moneyYAxis = {
+    grid: { drawBorder: false },
+    ticks: { callback: (v) => fmtINRCompact(v) },
+    beginAtZero: true,
+};
+
+// ── Income vs Expense (line) ──
 new Chart(document.getElementById('monthlyTrendChart'), {
     type: 'line',
     data: {
@@ -249,73 +304,111 @@ new Chart(document.getElementById('monthlyTrendChart'), {
                 label: 'Income',
                 data: chartData.monthly_bar.income,
                 borderColor: '#10b981',
-                backgroundColor: 'rgba(16, 185, 129, 0.1)',
-                tension: 0.4,
-                fill: true,
+                backgroundColor: vGradient('rgba(16,185,129,0.28)', 'rgba(16,185,129,0)'),
+                tension: 0.4, fill: true,
             },
             {
                 label: 'Expense',
                 data: chartData.monthly_bar.expense,
                 borderColor: '#ef4444',
-                backgroundColor: 'rgba(239, 68, 68, 0.1)',
-                tension: 0.4,
-                fill: true,
+                backgroundColor: vGradient('rgba(239,68,68,0.22)', 'rgba(239,68,68,0)'),
+                tension: 0.4, fill: true,
             },
             {
                 label: 'Savings',
                 data: chartData.monthly_bar.savings,
                 borderColor: '#6366f1',
-                backgroundColor: 'rgba(99, 102, 241, 0.1)',
-                tension: 0.4,
-                fill: false,
+                borderDash: [5, 4],
+                tension: 0.4, fill: false,
             }
         ]
     },
     options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: { legend: { display: true, position: 'top' } }
+        responsive: true, maintainAspectRatio: false,
+        interaction: { mode: 'index', intersect: false },
+        plugins: {
+            legend: { display: true, position: 'top', align: 'end' },
+            tooltip: moneyTooltip,
+        },
+        scales: { x: { grid: { display: false } }, y: moneyYAxis },
     }
 });
 
-// ── Expense Pie Chart ──
+// ── Expenses by Category (doughnut) ──
 new Chart(document.getElementById('expensePieChart'), {
-    type: 'pie',
+    type: 'doughnut',
     data: {
         labels: chartData.expense_pie.labels,
         datasets: [{
             data: chartData.expense_pie.data,
             backgroundColor: chartData.expense_pie.colors,
+            borderWidth: 2,
+            borderColor: getChartDefaults().bgColor,
+            hoverOffset: 6,
         }]
     },
     options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: { legend: { position: 'bottom' } }
+        responsive: true, maintainAspectRatio: false,
+        cutout: '68%',
+        plugins: {
+            legend: { position: 'bottom' },
+            tooltip: {
+                callbacks: {
+                    label: (ctx) => {
+                        const total = ctx.dataset.data.reduce((a, b) => a + b, 0);
+                        const pct = total ? Math.round(ctx.parsed / total * 100) : 0;
+                        return ` ${ctx.label}: ${fmtINR(ctx.parsed)} (${pct}%)`;
+                    }
+                }
+            }
+        }
     }
 });
 
-// ── Daily Trend Chart ──
+// ── Daily Expense Trend (bar) ──
 new Chart(document.getElementById('dailyTrendChart'), {
     type: 'bar',
     data: {
         labels: chartData.daily_trend.labels,
         datasets: [{
-            label: 'Daily Expense',
+            label: 'Spent',
             data: chartData.daily_trend.data,
-            backgroundColor: 'rgba(239, 68, 68, 0.6)',
-            borderColor: '#ef4444',
-            borderRadius: 8,
+            backgroundColor: vGradient('rgba(239,68,68,0.85)', 'rgba(239,68,68,0.35)'),
+            borderRadius: 6,
+            maxBarThickness: 18,
         }]
     },
     options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        indexAxis: 'x',
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false }, tooltip: moneyTooltip },
+        scales: {
+            x: { grid: { display: false }, ticks: { maxRotation: 0, autoSkip: true, maxTicksLimit: 10 } },
+            y: moneyYAxis,
+        }
     }
 });
 
-// ── Account Donut Chart ──
+// ── Monthly Expense (bar) ──
+new Chart(document.getElementById('monthlyExpenseChart'), {
+    type: 'bar',
+    data: {
+        labels: chartData.monthly_bar.labels,
+        datasets: [{
+            label: 'Expense',
+            data: chartData.monthly_bar.expense,
+            backgroundColor: vGradient('rgba(239,68,68,0.85)', 'rgba(239,68,68,0.35)'),
+            borderRadius: 6,
+            maxBarThickness: 32,
+        }]
+    },
+    options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false }, tooltip: moneyTooltip },
+        scales: { x: { grid: { display: false } }, y: moneyYAxis },
+    }
+});
+
+// ── Balance by Account (doughnut) ──
 new Chart(document.getElementById('accountDonutChart'), {
     type: 'doughnut',
     data: {
@@ -323,12 +416,18 @@ new Chart(document.getElementById('accountDonutChart'), {
         datasets: [{
             data: chartData.account_donut.data,
             backgroundColor: chartData.account_donut.colors,
+            borderWidth: 2,
+            borderColor: getChartDefaults().bgColor,
+            hoverOffset: 6,
         }]
     },
     options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: { legend: { position: 'bottom' } }
+        responsive: true, maintainAspectRatio: false,
+        cutout: '68%',
+        plugins: {
+            legend: { position: 'bottom' },
+            tooltip: { callbacks: { label: (ctx) => ` ${ctx.label}: ${fmtINR(ctx.parsed)}` } }
+        }
     }
 });
 
