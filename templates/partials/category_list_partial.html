@@ -1,0 +1,100 @@
+{% if message %}
+<div class="alert alert-success alert-dismissible fade show" role="alert">
+    <i class="bi bi-check-circle me-2"></i> {{ message }}
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+</div>
+{% endif %}
+
+<div class="row g-3">
+    <!-- Expense Categories -->
+    <div class="col-lg-6">
+        <div class="card h-100">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-arrow-down-circle text-danger"></i> Expense Categories
+                    <span class="badge bg-secondary ms-2">{{ expense_categories|length }}</span>
+                </h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-sm mb-0">
+                        <tbody>
+                        {% for category in expense_categories %}
+                            <tr>
+                                <td class="py-3" style="width: 60px;">
+                                    <div class="icon-circle" style="background: {{ category.color }}20; color: {{ category.color }};">
+                                        <i class="bi {{ category.icon }}"></i>
+                                    </div>
+                                </td>
+                                <td class="py-3"><strong>{{ category.name }}</strong></td>
+                                <td class="py-3 text-end">
+                                    <div class="d-flex gap-1 justify-content-end">
+                                        <a href="{% url 'transactions:category_edit' category.id %}" class="btn btn-sm btn-outline-secondary" title="Edit">
+                                            <i class="bi bi-pencil"></i>
+                                        </a>
+                                        <form method="post" action="{% url 'transactions:category_delete' category.id %}"
+                                              onsubmit="return confirm('Delete category \'{{ category.name|escapejs }}\'?');">
+                                            {% csrf_token %}
+                                            <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% empty %}
+                            <tr><td colspan="3" class="py-4 text-center text-muted">No expense categories</td></tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Income Categories -->
+    <div class="col-lg-6">
+        <div class="card h-100">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-arrow-up-circle text-success"></i> Income Categories
+                    <span class="badge bg-secondary ms-2">{{ income_categories|length }}</span>
+                </h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-sm mb-0">
+                        <tbody>
+                        {% for category in income_categories %}
+                            <tr>
+                                <td class="py-3" style="width: 60px;">
+                                    <div class="icon-circle" style="background: {{ category.color }}20; color: {{ category.color }};">
+                                        <i class="bi {{ category.icon }}"></i>
+                                    </div>
+                                </td>
+                                <td class="py-3"><strong>{{ category.name }}</strong></td>
+                                <td class="py-3 text-end">
+                                    <div class="d-flex gap-1 justify-content-end">
+                                        <a href="{% url 'transactions:category_edit' category.id %}" class="btn btn-sm btn-outline-secondary" title="Edit">
+                                            <i class="bi bi-pencil"></i>
+                                        </a>
+                                        <form method="post" action="{% url 'transactions:category_delete' category.id %}"
+                                              onsubmit="return confirm('Delete category \'{{ category.name|escapejs }}\'?');">
+                                            {% csrf_token %}
+                                            <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% empty %}
+                            <tr><td colspan="3" class="py-4 text-center text-muted">No income categories</td></tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

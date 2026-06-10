@@ -1,0 +1,160 @@
+{% extends 'base.html' %}
+
+{% block title %}Accounts{% endblock %}
+{% block page_title %}Bank Accounts{% endblock %}
+
+{% block content %}
+<div class="page-header mb-4 d-flex justify-content-between align-items-center">
+    <div>
+        <h1>Accounts</h1>
+        <p>Manage your bank accounts and wallets</p>
+    </div>
+    <a href="{% url 'accounts:create' %}" class="btn btn-primary">
+        <i class="bi bi-plus-lg"></i> New Account
+    </a>
+</div>
+
+<!-- Active Accounts Section -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0">
+            <i class="bi bi-bank"></i> Active Accounts
+            <span class="badge bg-primary ms-2">{{ accounts.count }}</span>
+        </h5>
+    </div>
+    <div class="card-body">
+        {% if accounts %}
+        <div class="row g-3">
+            {% for account in accounts %}
+            <div class="col-md-6 col-lg-4">
+                <div class="card border-0" style="background: var(--bg-secondary); border: 2px solid {{ account.color }}20 !important;">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start mb-3">
+                            <div>
+                                <div class="icon-circle" style="background: {{ account.color }}20; color: {{ account.color }}; font-size: 1.3rem;">
+                                    <i class="bi {{ account.icon }}"></i>
+                                </div>
+                            </div>
+                            <div class="dropdown">
+                                <button class="btn btn-sm btn-ghost" data-bs-toggle="dropdown">
+                                    <i class="bi bi-three-dots-vertical"></i>
+                                </button>
+                                <ul class="dropdown-menu dropdown-menu-end">
+                                    <li>
+                                        <a class="dropdown-item" href="{% url 'accounts:detail' account.id %}">
+                                            <i class="bi bi-eye me-2"></i>View Details
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item" href="{% url 'accounts:edit' account.id %}">
+                                            <i class="bi bi-pencil me-2"></i>Edit
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <hr class="dropdown-divider">
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item text-danger" href="{% url 'accounts:delete' account.id %}">
+                                            <i class="bi bi-trash me-2"></i>Delete
+                                        </a>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <h6 class="mb-1">{{ account.name }}</h6>
+                            <small class="text-muted">{{ account.get_account_type_display }}</small>
+                        </div>
+
+                        <div class="mb-3">
+                            <div class="text-muted" style="font-size: 0.85rem;">Balance</div>
+                            <div class="fs-5 fw-700">₹{{ account.balance|floatformat:2 }}</div>
+                        </div>
+
+                        <a href="{% url 'accounts:detail' account.id %}" class="btn btn-sm btn-outline-primary w-100">
+                            <i class="bi bi-arrow-right"></i> View Transactions
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-state py-5">
+            <i class="bi bi-inbox"></i>
+            <h5>No Accounts</h5>
+            <p class="text-muted mb-3">Start by creating your first bank account</p>
+            <a href="{% url 'accounts:create' %}" class="btn btn-primary">
+                <i class="bi bi-plus-lg"></i> Create Account
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Summary Stats -->
+{% if accounts %}
+<div class="row gap-3 mb-4">
+    <div class="col-md-6">
+        <div class="stat-card">
+            <div class="stat-icon" style="background: rgba(99, 102, 241, 0.15); color: #6366f1;">
+                <i class="bi bi-wallet2"></i>
+            </div>
+            <div class="stat-value">₹{{ total_balance|floatformat:2 }}</div>
+            <div class="stat-label">Total Balance</div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="stat-card">
+            <div class="stat-icon" style="background: rgba(139, 92, 246, 0.15); color: #8b5cf6;">
+                <i class="bi bi-safe"></i>
+            </div>
+            <div class="stat-value">{{ accounts.count }}</div>
+            <div class="stat-label">Active Accounts</div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Inactive Accounts -->
+{% if inactive_accounts %}
+<div class="card">
+    <div class="card-header">
+        <h5 class="mb-0">
+            <i class="bi bi-archive"></i> Inactive Accounts
+            <span class="badge bg-secondary ms-2">{{ inactive_accounts.count }}</span>
+        </h5>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-sm mb-0">
+                <thead>
+                    <tr>
+                        <th>Account Name</th>
+                        <th>Type</th>
+                        <th>Last Balance</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for account in inactive_accounts %}
+                    <tr class="opacity-75">
+                        <td>
+                            <i class="bi {{ account.icon }}" style="color: {{ account.color }}; margin-right: 0.5rem;"></i>
+                            {{ account.name }}
+                        </td>
+                        <td>{{ account.get_account_type_display }}</td>
+                        <td>₹{{ account.balance|floatformat:2 }}</td>
+                        <td>
+                            <a href="{% url 'accounts:edit' account.id %}" class="btn btn-sm btn-outline-primary">Activate</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

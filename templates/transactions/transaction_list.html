@@ -1,0 +1,95 @@
+{% extends 'base.html' %}
+
+{% block title %}All Transactions{% endblock %}
+{% block page_title %}All Transactions{% endblock %}
+
+{% block content %}
+<div class="page-header mb-4">
+    <h1>All Transactions</h1>
+    <p>View and manage all your transactions</p>
+</div>
+
+<!-- Summary -->
+<div class="row gap-3 mb-4">
+    <div class="col-md-6">
+        <div class="stat-card">
+            <div class="stat-icon" style="background: rgba(16, 185, 129, 0.15); color: #10b981;">
+                <i class="bi bi-arrow-up-circle"></i>
+            </div>
+            <div class="stat-value">₹{{ total_income|floatformat:2 }}</div>
+            <div class="stat-label">Total Income (filtered)</div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="stat-card">
+            <div class="stat-icon" style="background: rgba(239, 68, 68, 0.15); color: #ef4444;">
+                <i class="bi bi-arrow-down-circle"></i>
+            </div>
+            <div class="stat-value">₹{{ total_expense|floatformat:2 }}</div>
+            <div class="stat-label">Total Expense (filtered)</div>
+        </div>
+    </div>
+</div>
+
+<!-- Filters -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-3">
+            <div class="col-md-3">
+                <label class="form-label">Search</label>
+                {{ form.search }}
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Type</label>
+                {{ form.transaction_type }}
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Category</label>
+                {{ form.category }}
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Account</label>
+                {{ form.account }}
+            </div>
+            <div class="col-md-3">
+                <div class="row g-2">
+                    <div class="col-6">
+                        <label class="form-label">From</label>
+                        {{ form.date_from }}
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label">To</label>
+                        {{ form.date_to }}
+                    </div>
+                </div>
+            </div>
+            <div class="col-12 d-flex gap-2">
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-search"></i> Apply Filters
+                </button>
+                <a href="{% url 'transactions:list' %}" class="btn btn-outline-secondary">
+                    <i class="bi bi-x-lg"></i> Clear
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Transactions Table -->
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">Transactions <span class="badge bg-secondary">{{ transactions.paginator.count }}</span></h5>
+        <div class="d-flex gap-2">
+            <a href="{% url 'transactions:export_excel' %}" class="btn btn-sm btn-outline-primary">
+                <i class="bi bi-file-earmark-excel"></i> Excel
+            </a>
+            <a href="{% url 'transactions:export_csv' %}" class="btn btn-sm btn-outline-primary">
+                <i class="bi bi-filetype-csv"></i> CSV
+            </a>
+        </div>
+    </div>
+    <div id="transactionTable">
+        {% include 'partials/transaction_table.html' %}
+    </div>
+</div>
+{% endblock %}

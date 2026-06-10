@@ -1,0 +1,108 @@
+<div class="card-body p-0">
+    {% if transactions %}
+    <div class="table-responsive">
+        <table class="table table-hover mb-0">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Type</th>
+                    <th>Category</th>
+                    <th>Account</th>
+                    <th>Note</th>
+                    <th class="text-end">Amount</th>
+                    <th class="text-end">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for trans in transactions %}
+                <tr>
+                    <td class="py-3">{{ trans.transaction_date|date:"M d, Y" }}</td>
+                    <td class="py-3">
+                        <span class="badge badge-{{ trans.transaction_type }}">
+                            {{ trans.get_transaction_type_display }}
+                        </span>
+                    </td>
+                    <td class="py-3">
+                        {% if trans.transaction_type == 'transfer' %}
+                            <span class="text-muted">
+                                {{ trans.bank_account.name }} &rarr; {{ trans.target_account.name }}
+                            </span>
+                        {% elif trans.category %}
+                            <div class="d-flex align-items-center gap-2">
+                                <div class="icon-circle" style="background: {{ trans.category.color }}20; color: {{ trans.category.color }};">
+                                    <i class="bi {{ trans.category.icon }}"></i>
+                                </div>
+                                {{ trans.category.name }}
+                            </div>
+                        {% else %}
+                            <span class="text-muted">Uncategorized</span>
+                        {% endif %}
+                    </td>
+                    <td class="py-3">
+                        <small class="text-muted">{{ trans.bank_account.name }}</small>
+                    </td>
+                    <td class="py-3">{{ trans.note|default:"-" }}</td>
+                    <td class="py-3 text-end">
+                        <div class="fw-700 amount-{{ trans.transaction_type }}">
+                            {% if trans.transaction_type == 'income' %}+{% elif trans.transaction_type == 'expense' %}-{% endif %}₹{{ trans.amount|floatformat:2 }}
+                        </div>
+                    </td>
+                    <td class="py-3 text-end">
+                        <div class="d-flex gap-1 justify-content-end">
+                            <a href="{% url 'transactions:edit' trans.pk %}" class="btn btn-sm btn-outline-secondary" title="Edit">
+                                <i class="bi bi-pencil"></i>
+                            </a>
+                            <form method="post" action="{% url 'transactions:delete' trans.pk %}"
+                                  onsubmit="return confirm('Delete this transaction? Account balances will be adjusted.');">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="empty-state py-5">
+        <i class="bi bi-inbox"></i>
+        <h5>No Transactions Found</h5>
+        <p class="text-muted">Try adjusting your filters or create your first transaction</p>
+    </div>
+    {% endif %}
+</div>
+
+{% if transactions.paginator.num_pages > 1 %}
+<div class="card-footer bg-transparent">
+    <nav>
+        <ul class="pagination justify-content-center mb-0">
+            {% if transactions.has_previous %}
+            <li class="page-item">
+                <a class="page-link" href="?page=1{% for k, v in request.GET.items %}{% if k != 'page' %}&{{ k }}={{ v }}{% endif %}{% endfor %}">First</a>
+            </li>
+            <li class="page-item">
+                <a class="page-link" href="?page={{ transactions.previous_page_number }}{% for k, v in request.GET.items %}{% if k != 'page' %}&{{ k }}={{ v }}{% endif %}{% endfor %}">Previous</a>
+            </li>
+            {% endif %}
+
+            <li class="page-item active">
+                <span class="page-link">
+                    Page {{ transactions.number }} of {{ transactions.paginator.num_pages }}
+                </span>
+            </li>
+
+            {% if transactions.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ transactions.next_page_number }}{% for k, v in request.GET.items %}{% if k != 'page' %}&{{ k }}={{ v }}{% endif %}{% endfor %}">Next</a>
+            </li>
+            <li class="page-item">
+                <a class="page-link" href="?page={{ transactions.paginator.num_pages }}{% for k, v in request.GET.items %}{% if k != 'page' %}&{{ k }}={{ v }}{% endif %}{% endfor %}">Last</a>
+            </li>
+            {% endif %}
+        </ul>
+    </nav>
+</div>
+{% endif %}

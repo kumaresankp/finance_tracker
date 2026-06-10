@@ -1,0 +1,15 @@
+<div class="alert alert-danger alert-dismissible fade show" role="alert">
+    <i class="bi bi-exclamation-triangle me-2"></i>
+    <strong>Form Errors:</strong>
+    {% if form.non_field_errors %}
+        {% for error in form.non_field_errors %}
+            <div>{{ error }}</div>
+        {% endfor %}
+    {% endif %}
+    {% for field in form %}
+        {% if field.errors %}
+            <div>{{ field.label }}: {{ field.errors|join:', ' }}</div>
+        {% endif %}
+    {% endfor %}
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+</div>

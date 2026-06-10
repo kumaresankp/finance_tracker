@@ -1,0 +1,305 @@
+{% extends 'base.html' %}
+
+{% block title %}Settings{% endblock %}
+{% block page_title %}Settings{% endblock %}
+
+{% block content %}
+<div class="page-header mb-4">
+    <h1>Settings</h1>
+    <p>Configure your preferences and application settings</p>
+</div>
+
+<div class="row">
+    <!-- Settings Navigation -->
+    <div class="col-md-3 mb-4">
+        <div class="list-group sticky-top">
+            <a href="#general" class="list-group-item list-group-item-action" data-bs-toggle="list">
+                <i class="bi bi-gear me-2"></i> General
+            </a>
+            <a href="#appearance" class="list-group-item list-group-item-action" data-bs-toggle="list">
+                <i class="bi bi-palette me-2"></i> Appearance
+            </a>
+            <a href="#notifications" class="list-group-item list-group-item-action" data-bs-toggle="list">
+                <i class="bi bi-bell me-2"></i> Notifications
+            </a>
+            <a href="#backup" class="list-group-item list-group-item-action" data-bs-toggle="list">
+                <i class="bi bi-cloud me-2"></i> Backup & Restore
+            </a>
+            <a href="#about" class="list-group-item list-group-item-action" data-bs-toggle="list">
+                <i class="bi bi-info-circle me-2"></i> About
+            </a>
+        </div>
+    </div>
+
+    <!-- Settings Content -->
+    <div class="col-md-9">
+        <!-- General Settings -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0" id="general">
+                    <i class="bi bi-gear"></i> General Settings
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Currency</label>
+                        <select class="form-select">
+                            <option selected>₹ Indian Rupee</option>
+                            <option>$ US Dollar</option>
+                            <option>€ Euro</option>
+                            <option>£ British Pound</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Date Format</label>
+                        <select class="form-select">
+                            <option selected>DD/MM/YYYY</option>
+                            <option>MM/DD/YYYY</option>
+                            <option>YYYY-MM-DD</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Decimal Precision</label>
+                        <input type="number" min="0" max="4" value="2" class="form-control">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Fiscal Year Start</label>
+                        <input type="month" class="form-control">
+                    </div>
+                </div>
+
+                <button class="btn btn-primary">
+                    <i class="bi bi-check-lg"></i> Save Changes
+                </button>
+            </div>
+        </div>
+
+        <!-- Appearance Settings -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0" id="appearance">
+                    <i class="bi bi-palette"></i> Appearance
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <label class="form-label">Theme</label>
+                    <div class="btn-group w-100" role="group">
+                        <input type="radio" class="btn-check" name="theme" id="light" value="light" checked>
+                        <label class="btn btn-outline-primary" for="light">
+                            <i class="bi bi-sun"></i> Light
+                        </label>
+
+                        <input type="radio" class="btn-check" name="theme" id="dark" value="dark">
+                        <label class="btn btn-outline-primary" for="dark">
+                            <i class="bi bi-moon"></i> Dark
+                        </label>
+
+                        <input type="radio" class="btn-check" name="theme" id="auto" value="auto">
+                        <label class="btn btn-outline-primary" for="auto">
+                            <i class="bi bi-circle-half"></i> Auto
+                        </label>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Primary Color</label>
+                    <div class="d-flex gap-2">
+                        <input type="color" value="#6366f1" class="form-control form-control-color" style="width: 100px;">
+                        <select class="form-select">
+                            <option selected>Indigo</option>
+                            <option>Blue</option>
+                            <option>Purple</option>
+                            <option>Green</option>
+                            <option>Red</option>
+                        </select>
+                    </div>
+                </div>
+
+                <button class="btn btn-primary">
+                    <i class="bi bi-check-lg"></i> Save Changes
+                </button>
+            </div>
+        </div>
+
+        <!-- Notifications Settings -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0" id="notifications">
+                    <i class="bi bi-bell"></i> Notifications
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="form-check form-switch mb-2">
+                    <input class="form-check-input" type="checkbox" id="notif_transaction" checked>
+                    <label class="form-check-label" for="notif_transaction">
+                        New Transaction Notifications
+                    </label>
+                </div>
+                <div class="form-check form-switch mb-2">
+                    <input class="form-check-input" type="checkbox" id="notif_budget" checked>
+                    <label class="form-check-label" for="notif_budget">
+                        Budget Alert Notifications
+                    </label>
+                </div>
+                <div class="form-check form-switch mb-3">
+                    <input class="form-check-input" type="checkbox" id="notif_email">
+                    <label class="form-check-label" for="notif_email">
+                        Email Notifications
+                    </label>
+                </div>
+
+                <button class="btn btn-primary">
+                    <i class="bi bi-check-lg"></i> Save Changes
+                </button>
+            </div>
+        </div>
+
+        <!-- Backup & Restore -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0" id="backup">
+                    <i class="bi bi-cloud"></i> Backup & Restore
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <h6>Sample Data</h6>
+                    <p class="text-muted small">Populate the app with demo accounts, categories, and ~3 months of transactions.</p>
+                    <form method="post" action="{% url 'settings_app:seed_data' %}">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-outline-primary">
+                            <i class="bi bi-magic"></i> Seed Sample Data
+                        </button>
+                    </form>
+                </div>
+
+                <hr>
+
+                <div class="mb-3">
+                    <h6>Data Backup</h6>
+                    <p class="text-muted small">Download a full copy of the database.</p>
+                    <a href="{% url 'transactions:backup' %}" class="btn btn-success">
+                        <i class="bi bi-cloud-download"></i> Backup Now
+                    </a>
+                </div>
+
+                <hr>
+
+                <div class="mb-3">
+                    <h6>Restore from Backup</h6>
+                    <p class="text-muted small">Restore your data from a previously created backup.</p>
+                    <form method="post" action="{% url 'transactions:restore' %}" enctype="multipart/form-data"
+                          onsubmit="return confirm('Restoring will overwrite ALL current data. Continue?');">
+                        {% csrf_token %}
+                        <input type="file" name="backup_file" class="form-control mb-2" accept=".sqlite3,.db" required>
+                        <button type="submit" class="btn btn-warning">
+                            <i class="bi bi-cloud-upload"></i> Restore Backup
+                        </button>
+                    </form>
+                </div>
+
+                <hr>
+
+                <div>
+                    <h6 class="text-danger">Danger Zone</h6>
+                    <p class="text-muted small mb-3">Permanently delete all your data. This action cannot be undone.</p>
+                    <button class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal">
+                        <i class="bi bi-trash"></i> Delete All Data
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- About -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0" id="about">
+                    <i class="bi bi-info-circle"></i> About
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <h6>FinanceTracker</h6>
+                    <p class="text-muted">Personal Finance Management System</p>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <small class="text-muted d-block">Version</small>
+                        <div class="fw-600 mb-3">1.0.0</div>
+
+                        <small class="text-muted d-block">Last Updated</small>
+                        <div class="fw-600">May 28, 2026</div>
+                    </div>
+                    <div class="col-md-6">
+                        <small class="text-muted d-block">Environment</small>
+                        <div class="fw-600 mb-3">Development</div>
+
+                        <small class="text-muted d-block">Database</small>
+                        <div class="fw-600">SQLite</div>
+                    </div>
+                </div>
+
+                <hr>
+
+                <div class="d-flex gap-2">
+                    <a href="#" class="btn btn-outline-secondary btn-sm">
+                        <i class="bi bi-github"></i> GitHub
+                    </a>
+                    <a href="#" class="btn btn-outline-secondary btn-sm">
+                        <i class="bi bi-chat-dots"></i> Support
+                    </a>
+                    <a href="#" class="btn btn-outline-secondary btn-sm">
+                        <i class="bi bi-file-earmark-text"></i> Changelog
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Data Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title">Delete All Data</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p class="text-danger fw-600 mb-2">This action cannot be undone!</p>
+                <p>Deleting all data will permanently remove:</p>
+                <ul class="mb-3">
+                    <li>All accounts and balances</li>
+                    <li>All transactions</li>
+                    <li>All categories</li>
+                </ul>
+                <p class="text-muted small">Type "DELETE" to confirm:</p>
+                <input type="text" class="form-control" id="deleteConfirmInput" placeholder="Type DELETE to confirm">
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <form method="post" action="{% url 'settings_app:clear_data' %}">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger" id="deleteConfirmBtn" disabled>Delete Everything</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const delInput = document.getElementById('deleteConfirmInput');
+    const delBtn = document.getElementById('deleteConfirmBtn');
+    if (delInput && delBtn) {
+        delInput.addEventListener('input', function () {
+            delBtn.disabled = this.value.trim() !== 'DELETE';
+        });
+    }
+</script>
+{% endblock %}

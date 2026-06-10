@@ -1,0 +1,91 @@
+{% extends 'base.html' %}
+
+{% block title %}Transfer Money{% endblock %}
+{% block page_title %}Transfer Money{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- Form Column -->
+    <div class="col-lg-5">
+        <div class="page-header mb-4">
+            <h1>Transfer Money</h1>
+            <p>Move money between your accounts</p>
+        </div>
+
+        <div class="card">
+            <div class="card-body">
+                <form method="post" id="transferForm" hx-post="{% url 'transactions:transfer' %}" hx-target="#recentTransactions" hx-swap="innerHTML">
+                    {% csrf_token %}
+
+                    <div class="mb-3">
+                        <label for="{{ form.bank_account.id_for_label }}" class="form-label">From Account</label>
+                        {{ form.bank_account }}
+                        {% if form.bank_account.errors %}
+                        <div class="invalid-feedback d-block">{{ form.bank_account.errors|join:', ' }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="{{ form.target_account.id_for_label }}" class="form-label">To Account</label>
+                        {{ form.target_account }}
+                        {% if form.target_account.errors %}
+                        <div class="invalid-feedback d-block">{{ form.target_account.errors|join:', ' }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="my-4 text-center">
+                        <div class="transfer-arrow">
+                            <i class="bi bi-arrow-down"></i>
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label">Amount</label>
+                        <div class="input-group">
+                            <span class="input-group-text">₹</span>
+                            {{ form.amount }}
+                        </div>
+                        {% if form.amount.errors %}
+                        <div class="invalid-feedback d-block">{{ form.amount.errors|join:', ' }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="{{ form.transaction_date.id_for_label }}" class="form-label">Date</label>
+                        {{ form.transaction_date }}
+                        {% if form.transaction_date.errors %}
+                        <div class="invalid-feedback d-block">{{ form.transaction_date.errors|join:', ' }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="{{ form.note.id_for_label }}" class="form-label">Description (optional)</label>
+                        {{ form.note }}
+                        {% if form.note.errors %}
+                        <div class="invalid-feedback d-block">{{ form.note.errors|join:', ' }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            <i class="bi bi-arrow-left-right"></i> Complete Transfer
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Transfers Column -->
+    <div class="col-lg-7">
+        <div class="page-header mb-4">
+            <h1>Recent Transfers</h1>
+            <p>Last 10 transfers</p>
+        </div>
+
+        <div class="card" id="recentTransactions">
+            {% include 'partials/transaction_list.html' %}
+        </div>
+    </div>
+</div>
+{% endblock %}

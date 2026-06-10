@@ -1,0 +1,40 @@
+<div class="alert alert-success alert-dismissible fade show mb-3" role="alert">
+    <i class="bi bi-check-circle me-2"></i>
+    <strong>Expense Recorded!</strong> ₹{{ transaction.amount|floatformat:2 }} from {{ transaction.bank_account.name }}
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+</div>
+
+<!-- Clear form and update recent -->
+<script>
+    document.getElementById('expenseForm').reset();
+</script>
+
+<!-- Recent Transactions List -->
+<div class="card-body p-0">
+    {% if recent_transactions %}
+    <div class="table-responsive">
+        <table class="table table-hover mb-0">
+            <tbody>
+            {% for trans in recent_transactions %}
+                <tr class="fade-in-up">
+                    <td class="py-3">
+                        <div class="icon-circle" style="background: {{ trans.category.color }}20; color: {{ trans.category.color }};">
+                            <i class="bi {{ trans.category.icon }}"></i>
+                        </div>
+                    </td>
+                    <td class="py-3">
+                        <div class="fw-600">{{ trans.category.name }}</div>
+                        <small class="text-muted">{{ trans.transaction_date|date:"M d, Y" }}</small>
+                    </td>
+                    <td class="py-3 text-end">
+                        <div class="fw-700 amount-expense">
+                            -₹{{ trans.amount|floatformat:0 }}
+                        </div>
+                    </td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+</div>
