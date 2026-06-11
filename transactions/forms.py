@@ -42,6 +42,11 @@ class ExpenseForm(forms.ModelForm):
         self.fields['bank_account'].queryset = BankAccount.objects.filter(is_active=True)
         if not self.instance.pk:
             self.fields['transaction_date'].initial = timezone.now().date()
+            default_account = BankAccount.objects.filter(
+                is_active=True, account_type='savings', name='Indian Bank'
+            ).first()
+            if default_account:
+                self.fields['bank_account'].initial = default_account.pk
 
     def clean(self):
         cleaned_data = super().clean()

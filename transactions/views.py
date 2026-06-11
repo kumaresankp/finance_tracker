@@ -230,6 +230,7 @@ def transaction_edit(request, pk):
 
 @require_POST
 def transaction_delete(request, pk):
+    from django.utils.http import url_has_allowed_host_and_scheme
     transaction = get_object_or_404(Transaction, pk=pk)
     amount = transaction.amount
     t_type = transaction.transaction_type
@@ -242,7 +243,10 @@ def transaction_delete(request, pk):
             f'<button type="button" class="btn-close" data-bs-dismiss="alert"></button>'
             f'</div>'
         )
-    messages.success(request, f'Transaction deleted successfully!')
+    messages.success(request, f'Transaction of ₹{amount} ({t_type}) deleted successfully!')
+    next_url = request.POST.get('next')
+    if next_url and url_has_allowed_host_and_scheme(next_url, allowed_hosts={request.get_host()}):
+        return redirect(next_url)
     return redirect('transactions:list')
 
 
@@ -431,11 +435,15 @@ def export_csv(request):
 
 def import_excel(request):
     """Import transactions from Excel"""
+    from django.utils.http import url_has_allowed_host_and_scheme
+    next_url = request.POST.get('next')
+    if not (next_url and url_has_allowed_host_and_scheme(next_url, allowed_hosts={request.get_host()})):
+        next_url = 'transactions:import_export'
     if request.method == 'POST':
         excel_file = request.FILES.get('excel_file')
         if not excel_file:
             messages.error(request, 'Please select an Excel file.')
-            return redirect('transactions:import_export')
+            return redirect(next_url)
 
         try:
             import openpyxl
@@ -516,9 +524,9 @@ def import_excel(request):
         except Exception as e:
             messages.error(request, f'Import failed: {str(e)}')
 
-        return redirect('transactions:import_export')
+        return redirect(next_url)
 
-    return redirect('transactions:import_export')
+    return redirect(next_url)
 
 
 def import_export_view(request):

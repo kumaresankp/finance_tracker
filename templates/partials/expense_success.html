@@ -31,6 +31,16 @@
                             -₹{{ trans.amount|floatformat:0 }}
                         </div>
                     </td>
+                    <td class="py-3 text-end">
+                        <form method="post" action="{% url 'transactions:delete' trans.pk %}"
+                              onsubmit="return confirm('Delete this transaction? Account balances will be adjusted.');">
+                            {% csrf_token %}
+                            <input type="hidden" name="next" value="{% url 'transactions:expense' %}">
+                            <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </form>
+                    </td>
                 </tr>
             {% endfor %}
             </tbody>
