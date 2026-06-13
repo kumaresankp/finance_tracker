@@ -1,0 +1,25 @@
+name: Weekly SQLite Backup
+
+on:
+  schedule:
+    - cron: '0 2 * * 0' # Every Sunday 02:00 UTC
+  workflow_dispatch:
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Download SQLite backup
+        run: |
+          mkdir backup
+          curl -L \
+            "https://finance-tracker-crwf.onrender.com/transactions/backup/" \
+            -o backup/db.sqlite3
+
+      - name: Upload backup artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: sqlite-backup-${{ github.run_number }}
+          path: backup/db.sqlite3
+          retention-days: 90
