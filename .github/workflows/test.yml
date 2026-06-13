@@ -1,0 +1,38 @@
+name: Test Backup
+
+on:
+  workflow_dispatch:
+
+jobs:
+  test-backup:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Download backup
+        run: |
+          curl -f -L \
+            "https://finance-tracker-crwf.onrender.com/transactions/backup/" \
+            -o db.sqlite3
+
+      - name: Verify file exists
+        run: |
+          ls -lh db.sqlite3
+
+      - name: Verify SQLite database
+        run: |
+          file db.sqlite3
+
+      - name: Install sqlite3
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y sqlite3
+
+      - name: List tables
+        run: |
+          sqlite3 db.sqlite3 ".tables"
+
+      - name: Upload backup artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-sqlite-backup
+          path: db.sqlite3
