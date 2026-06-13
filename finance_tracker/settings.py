@@ -7,7 +7,7 @@ SECRET_KEY = 'django-insecure-finance-tracker-secret-key-change-in-production-20
 
 DEBUG = True
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', '.pythonanywhere.com']
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', '.pythonanywhere.com','*']
 
 INSTALLED_APPS = [
     'django.contrib.admin',
