@@ -1,0 +1,327 @@
+{% extends 'base.html' %}
+
+{% block title %}Insights{% endblock %}
+{% block page_title %}Insights{% endblock %}
+
+{% block extra_css %}
+<style>
+    .health-gauge-wrap { position: relative; height: 220px; }
+    .health-center {
+        position: absolute; inset: 0; display: flex; flex-direction: column;
+        align-items: center; justify-content: center; pointer-events: none;
+    }
+    .health-center .hc-score { font-size: 2.6rem; font-weight: 800; line-height: 1; }
+    .health-center .hc-grade { font-size: .8rem; font-weight: 600; opacity: .7; letter-spacing: .04em; }
+    .component-row { margin-bottom: .9rem; }
+    .component-row:last-child { margin-bottom: 0; }
+    .component-bar { height: 7px; border-radius: 6px; background: rgba(99,102,241,.12); overflow: hidden; }
+    .component-bar > span { display: block; height: 100%; border-radius: 6px; }
+    .insight-card {
+        display: flex; gap: .85rem; align-items: flex-start; padding: 1rem 1.1rem;
+        border-radius: 14px; height: 100%;
+        border: 1px solid var(--bs-border-color, rgba(0,0,0,.07));
+    }
+    .insight-card .ic-icon {
+        width: 38px; height: 38px; flex: 0 0 38px; border-radius: 10px;
+        display: flex; align-items: center; justify-content: center; font-size: 1.1rem;
+    }
+    .mover-row { display: flex; align-items: center; justify-content: space-between; padding: .55rem .25rem; }
+    .mover-delta { font-weight: 700; font-variant-numeric: tabular-nums; }
+    .recurring-table td { vertical-align: middle; }
+
+    /* ── Mobile tuning ── */
+    @media (max-width: 576px) {
+        .health-gauge-wrap { height: 180px; }
+        .health-center .hc-score { font-size: 2.1rem; }
+        .insight-card { padding: .85rem .9rem; }
+        /* Stack the ▲/▼ mover columns instead of cramming side-by-side */
+        .movers-grid > [class*="col-"] { width: 100%; flex: 0 0 100%; max-width: 100%; }
+        .movers-grid > [class*="col-"]:first-child { margin-bottom: 1rem; }
+        .mover-row .text-truncate { max-width: none !important; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header d-flex flex-wrap justify-content-between align-items-center gap-3">
+    <div>
+        <h1>Insights</h1>
+        <p>Smart analysis of your spending &amp; financial health</p>
+    </div>
+    <div class="filter-pill">
+        <i class="bi bi-calendar3"></i>
+        <select class="form-select" id="monthSelect" onchange="updateDates()" aria-label="Month">
+            {% for id, name in months %}
+            <option value="{{ id }}" {% if id == selected_month %}selected{% endif %}>{{ name }}</option>
+            {% endfor %}
+        </select>
+        <span class="filter-sep"></span>
+        <select class="form-select" id="yearSelect" onchange="updateDates()" aria-label="Year">
+            {% for y in years %}
+            <option value="{{ y }}" {% if y == selected_year %}selected{% endif %}>{{ y }}</option>
+            {% endfor %}
+        </select>
+    </div>
+</div>
+
+<!-- Health Score + Forecast -->
+<div class="row gap-3 mb-4">
+    <div class="col-lg-5">
+        <div class="card h-100">
+            <div class="card-header">
+                <h5 class="mb-0">Financial Health Score</h5>
+                <span class="card-eyebrow">{{ health.label }}</span>
+            </div>
+            <div class="card-body">
+                <div class="health-gauge-wrap">
+                    <canvas id="healthGauge"></canvas>
+                    <div class="health-center">
+                        <span class="hc-score" id="healthScoreText">{{ health.score }}</span>
+                        <span class="hc-grade">GRADE {{ health.grade }} · {{ health.label|upper }}</span>
+                    </div>
+                </div>
+                <div class="mt-4">
+                    {% for c in health.components %}
+                    <div class="component-row">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <span class="fw-600"><i class="bi {{ c.icon }} me-2 text-muted"></i>{{ c.label }}</span>
+                            <span class="fw-700">{{ c.score }}</span>
+                        </div>
+                        <div class="component-bar">
+                            <span style="width: {{ c.score }}%;
+                                background: {% if c.score >= 70 %}#10b981{% elif c.score >= 45 %}#f59e0b{% else %}#ef4444{% endif %};"></span>
+                        </div>
+                        <small class="text-muted">{{ c.detail }}</small>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-7">
+        <!-- Forecast -->
+        <div class="card mb-3">
+            <div class="card-header">
+                <h5 class="mb-0">Spend Forecast</h5>
+                <span class="card-eyebrow">{% if forecast.is_current %}This month{% else %}Selected month{% endif %}</span>
+            </div>
+            <div class="card-body">
+                <div class="row text-center g-3">
+                    <div class="col-4">
+                        <div class="stat-label">Spent so far</div>
+                        <div class="fw-700 fs-5">₹{{ forecast.spent_so_far|floatformat:0 }}</div>
+                    </div>
+                    <div class="col-4">
+                        <div class="stat-label">Projected month-end</div>
+                        <div class="fw-700 fs-5" style="color:#6366f1;">₹{{ forecast.projected|floatformat:0 }}</div>
+                    </div>
+                    <div class="col-4">
+                        <div class="stat-label">Last month</div>
+                        <div class="fw-700 fs-5 text-muted">₹{{ forecast.prev_month|floatformat:0 }}</div>
+                    </div>
+                </div>
+                {% if forecast.pace_pct is not None %}
+                <div class="alert {% if forecast.on_track %}alert-success{% else %}alert-warning{% endif %} d-flex align-items-center gap-2 mt-3 mb-0">
+                    <i class="bi {% if forecast.on_track %}bi-check-circle{% else %}bi-exclamation-triangle{% endif %} fs-5"></i>
+                    <div>
+                        {% if forecast.on_track %}
+                            On track — projected to spend
+                            {% if forecast.pace_pct < 0 %}{{ forecast.pace_pct|floatformat:0 }}% less than{% else %}about the same as{% endif %}
+                            last month.
+                        {% else %}
+                            Heads up — on pace to spend <strong>{{ forecast.pace_pct|floatformat:0 }}% more</strong> than last month.
+                        {% endif %}
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Anomaly alerts -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Anomaly Alerts</h5>
+                <span class="card-eyebrow">Unusual activity</span>
+            </div>
+            <div class="card-body">
+                {% for a in anomalies %}
+                <div class="alert {% if a.level == 'warning' %}alert-warning{% else %}alert-info{% endif %} d-flex align-items-start gap-2 {% if not forloop.last %}mb-2{% else %}mb-0{% endif %}">
+                    <i class="bi {% if a.level == 'warning' %}bi-graph-up-arrow{% else %}bi-info-circle{% endif %} fs-5"></i>
+                    <div>
+                        <div class="fw-700">{{ a.title }}{% if a.pct_change %} <span class="badge bg-danger-subtle text-danger">+{{ a.pct_change }}%</span>{% endif %}</div>
+                        <small>{{ a.detail }}</small>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="empty-state py-4">
+                    <i class="bi bi-check2-circle"></i>
+                    <h6>All clear</h6>
+                    <p>No unusual spending detected this period.</p>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Narrative insight cards -->
+<div class="row gap-3 mb-4 stagger">
+    {% for n in narratives %}
+    <div class="col-md-6 col-xl-4">
+        {% if n.tone == 'success' %}{% with col='#10b981' %}
+        <div class="insight-card" style="background:{{ col }}10;">
+            <div class="ic-icon" style="background:{{ col }}22; color:{{ col }};"><i class="bi {{ n.icon }}"></i></div>
+            <div class="fw-500">{{ n.text }}</div>
+        </div>{% endwith %}
+        {% elif n.tone == 'danger' %}{% with col='#ef4444' %}
+        <div class="insight-card" style="background:{{ col }}10;">
+            <div class="ic-icon" style="background:{{ col }}22; color:{{ col }};"><i class="bi {{ n.icon }}"></i></div>
+            <div class="fw-500">{{ n.text }}</div>
+        </div>{% endwith %}
+        {% elif n.tone == 'warning' %}{% with col='#f59e0b' %}
+        <div class="insight-card" style="background:{{ col }}10;">
+            <div class="ic-icon" style="background:{{ col }}22; color:{{ col }};"><i class="bi {{ n.icon }}"></i></div>
+            <div class="fw-500">{{ n.text }}</div>
+        </div>{% endwith %}
+        {% else %}{% with col='#6366f1' %}
+        <div class="insight-card" style="background:{{ col }}0d;">
+            <div class="ic-icon" style="background:{{ col }}22; color:{{ col }};"><i class="bi {{ n.icon }}"></i></div>
+            <div class="fw-500">{{ n.text }}</div>
+        </div>{% endwith %}
+        {% endif %}
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Top movers + Recurring -->
+<div class="row gap-3">
+    <div class="col-lg-6">
+        <div class="card h-100">
+            <div class="card-header">
+                <h5 class="mb-0">Top Movers</h5>
+                <span class="card-eyebrow">vs last month</span>
+            </div>
+            <div class="card-body">
+                <div class="row movers-grid">
+                    <div class="col-6">
+                        <small class="text-uppercase text-muted fw-700">▲ Increased</small>
+                        {% for m in movers.increases %}
+                        <div class="mover-row">
+                            <div class="d-flex align-items-center gap-2">
+                                <div class="icon-circle" style="background:{{ m.color }}20; color:{{ m.color }};">
+                                    <i class="bi {{ m.icon }}"></i>
+                                </div>
+                                <span class="fw-600 text-truncate" style="max-width:90px;">{{ m.category }}</span>
+                            </div>
+                            <span class="mover-delta text-danger">+₹{{ m.delta|floatformat:0 }}</span>
+                        </div>
+                        {% empty %}
+                        <p class="text-muted small mt-2">No increases.</p>
+                        {% endfor %}
+                    </div>
+                    <div class="col-6">
+                        <small class="text-uppercase text-muted fw-700">▼ Decreased</small>
+                        {% for m in movers.decreases %}
+                        <div class="mover-row">
+                            <div class="d-flex align-items-center gap-2">
+                                <div class="icon-circle" style="background:{{ m.color }}20; color:{{ m.color }};">
+                                    <i class="bi {{ m.icon }}"></i>
+                                </div>
+                                <span class="fw-600 text-truncate" style="max-width:90px;">{{ m.category }}</span>
+                            </div>
+                            <span class="mover-delta text-success">−₹{{ m.delta|floatformat:0|cut:"-" }}</span>
+                        </div>
+                        {% empty %}
+                        <p class="text-muted small mt-2">No decreases.</p>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-6">
+        <div class="card h-100">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <div>
+                    <h5 class="mb-0">Recurring Charges</h5>
+                    <span class="card-eyebrow">Detected subscriptions</span>
+                </div>
+                {% if recurring.monthly_total %}
+                <div class="text-end">
+                    <div class="fw-700 fs-5">₹{{ recurring.monthly_total|floatformat:0 }}</div>
+                    <small class="text-muted">per month</small>
+                </div>
+                {% endif %}
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0 recurring-table">
+                        <tbody>
+                        {% for r in recurring.items %}
+                            <tr>
+                                <td class="py-3 ps-3">
+                                    <div class="icon-circle" style="background:{{ r.color }}20; color:{{ r.color }};">
+                                        <i class="bi {{ r.icon }}"></i>
+                                    </div>
+                                </td>
+                                <td class="py-3">
+                                    <div class="fw-600">{{ r.label }}</div>
+                                    <small class="text-muted">{{ r.frequency }}</small>
+                                </td>
+                                <td class="py-3 text-end pe-3">
+                                    <div class="fw-700">~₹{{ r.avg_amount|floatformat:0 }}</div>
+                                    <small class="text-muted">last {{ r.last_date|date:"M d" }}</small>
+                                </td>
+                            </tr>
+                        {% empty %}
+                            <tr><td class="py-4 text-center text-muted">No recurring charges detected yet.</td></tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const insightData = {{ chart_data_json|safe }};
+
+// ── Health Score gauge (half-doughnut) ──
+(function () {
+    const score = insightData.health.score;
+    const color = score >= 85 ? '#10b981' : score >= 70 ? '#22c55e'
+                : score >= 55 ? '#f59e0b' : score >= 40 ? '#f97316' : '#ef4444';
+    const track = getChartDefaults().gridColor;
+    new Chart(document.getElementById('healthGauge'), {
+        type: 'doughnut',
+        data: {
+            datasets: [{
+                data: [score, 100 - score],
+                backgroundColor: [color, track],
+                borderWidth: 0,
+                circumference: 270,
+                rotation: 225,
+            }]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            cutout: '78%',
+            plugins: { legend: { display: false }, tooltip: { enabled: false } },
+        }
+    });
+    document.getElementById('healthScoreText').style.color = color;
+})();
+
+// ── Filter handler ──
+function updateDates() {
+    const month = document.getElementById('monthSelect').value;
+    const year = document.getElementById('yearSelect').value;
+    window.location.href = `?month=${month}&year=${year}`;
+}
+</script>
+{% endblock %}

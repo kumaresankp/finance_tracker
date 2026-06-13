@@ -881,6 +881,13 @@
         <div class="nav-section-title">Analytics</div>
         <ul class="nav flex-column gap-0">
             <li class="nav-item">
+                <a href="{% url 'insights:insights' %}"
+                   class="nav-link {% if request.resolver_match.namespace == 'insights' %}active{% endif %}">
+                    <i class="bi bi-lightbulb nav-icon" style="color:#f59e0b"></i>
+                    <span class="nav-text">Insights</span>
+                </a>
+            </li>
+            <li class="nav-item">
                 <a href="{% url 'reports:reports' %}"
                    class="nav-link {% if request.resolver_match.namespace == 'reports' %}active{% endif %}">
                     <i class="bi bi-bar-chart nav-icon"></i>

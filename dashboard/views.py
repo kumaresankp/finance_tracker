@@ -14,6 +14,14 @@ from transactions.services import (
     get_recent_transactions,
     get_total_balance,
 )
+from transactions.analytics import (
+    get_income_breakdown,
+    get_weekday_spending,
+    get_cumulative_cashflow,
+    get_spending_calendar,
+    get_stat_sparklines,
+    get_spend_forecast,
+)
 from accounts.models import BankAccount
 from transactions.models import Transaction
 
@@ -42,6 +50,14 @@ def dashboard_view(request):
     account_dist = get_account_distribution()
     top_categories = get_top_spending_categories(8, year, month)
     recent_transactions = get_recent_transactions(10)
+
+    # ── Advanced widgets ──
+    income_categories_dist = get_income_breakdown(year, month)
+    weekday_spending = get_weekday_spending(year, month)
+    cumulative_cashflow = get_cumulative_cashflow(year, month)
+    spending_calendar = get_spending_calendar(year, month)
+    sparklines = get_stat_sparklines(year, month)
+    forecast = get_spend_forecast(year, month)
 
     # ── Previous Month Comparison ──
     prev_month = month - 1 if month > 1 else 12
@@ -81,6 +97,20 @@ def dashboard_view(request):
             'data': [float(a['balance']) for a in account_dist],
             'colors': [a['color'] for a in account_dist],
         },
+        'income_pie': {
+            'labels': [c['category__name'] or 'Uncategorized' for c in income_categories_dist],
+            'data': [float(c['total']) for c in income_categories_dist],
+            'colors': [c['category__color'] or '#10b981' for c in income_categories_dist],
+        },
+        'weekday': {
+            'labels': weekday_spending['labels'],
+            'data': weekday_spending['data'],
+        },
+        'cashflow': {
+            'labels': cumulative_cashflow['labels'],
+            'data': cumulative_cashflow['data'],
+        },
+        'sparklines': sparklines,
     }
 
     # ── Month selector ──
@@ -97,6 +127,8 @@ def dashboard_view(request):
         'recent_transactions': recent_transactions,
         'top_categories': top_categories,
         'account_dist': account_dist,
+        'spending_calendar': spending_calendar,
+        'forecast': forecast,
         'chart_data_json': json.dumps(chart_data, default=decimal_default),
         'selected_year': year,
         'selected_month': month,

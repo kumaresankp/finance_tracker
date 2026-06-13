@@ -20,6 +20,7 @@ INSTALLED_APPS = [
     'accounts',
     'transactions',
     'dashboard',
+    'insights',
     'reports',
     'settings_app',
 ]

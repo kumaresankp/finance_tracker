@@ -177,27 +177,59 @@ def transaction_list(request):
 
     # Pagination
     from django.core.paginator import Paginator
-    paginator = Paginator(queryset, 25)
+
+    per_page_choices = [25, 50, 100]
+    try:
+        per_page = int(request.GET.get('per_page', 25))
+    except (TypeError, ValueError):
+        per_page = 25
+    if per_page not in per_page_choices:
+        per_page = 25
+
+    paginator = Paginator(queryset, per_page)
     page = request.GET.get('page', 1)
     transactions = paginator.get_page(page)
+
+    # Windowed page range (…) so the control stays compact for large datasets.
+    elided_range = paginator.get_elided_page_range(
+        transactions.number, on_each_side=2, on_ends=1
+    )
+
+    # Querystring with all current filters but the page number stripped, so
+    # page links / per-page selector preserve the active filters.
+    params = request.GET.copy()
+    params.pop('page', None)
+    base_query = params.urlencode()
+
+    # Same, but also without per_page — used by the page-size selector.
+    filter_params = params.copy()
+    filter_params.pop('per_page', None)
+    filter_query = filter_params.urlencode()
 
     total_income = queryset.filter(transaction_type='income').aggregate(
         t=Sum('amount'))['t'] or 0
     total_expense = queryset.filter(transaction_type='expense').aggregate(
         t=Sum('amount'))['t'] or 0
 
+    pagination_ctx = {
+        'transactions': transactions,
+        'paginator': paginator,
+        'elided_range': elided_range,
+        'base_query': base_query,
+        'filter_query': filter_query,
+        'per_page': per_page,
+        'per_page_choices': per_page_choices,
+    }
+
     if request.headers.get('HX-Request'):
-        return render(request, 'partials/transaction_table.html', {
-            'transactions': transactions,
-            'paginator': paginator,
-        })
+        return render(request, 'partials/transaction_table.html', pagination_ctx)
 
     context = {
         'form': form,
-        'transactions': transactions,
         'total_income': total_income,
         'total_expense': total_expense,
         'page_title': 'All Transactions',
+        **pagination_ctx,
     }
     return render(request, 'transactions/transaction_list.html', context)
 

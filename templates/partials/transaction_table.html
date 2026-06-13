@@ -75,34 +75,60 @@
     {% endif %}
 </div>
 
-{% if transactions.paginator.num_pages > 1 %}
+{% if transactions.paginator.count %}
 <div class="card-footer bg-transparent">
-    <nav>
-        <ul class="pagination justify-content-center mb-0">
-            {% if transactions.has_previous %}
-            <li class="page-item">
-                <a class="page-link" href="?page=1{% for k, v in request.GET.items %}{% if k != 'page' %}&{{ k }}={{ v }}{% endif %}{% endfor %}">First</a>
-            </li>
-            <li class="page-item">
-                <a class="page-link" href="?page={{ transactions.previous_page_number }}{% for k, v in request.GET.items %}{% if k != 'page' %}&{{ k }}={{ v }}{% endif %}{% endfor %}">Previous</a>
-            </li>
-            {% endif %}
+    <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
+        <!-- Showing X–Y of Z -->
+        <div class="text-muted small order-1">
+            Showing <strong>{{ transactions.start_index }}</strong>–<strong>{{ transactions.end_index }}</strong>
+            of <strong>{{ transactions.paginator.count }}</strong>
+        </div>
 
-            <li class="page-item active">
-                <span class="page-link">
-                    Page {{ transactions.number }} of {{ transactions.paginator.num_pages }}
-                </span>
-            </li>
+        <!-- Page links -->
+        {% if transactions.paginator.num_pages > 1 %}
+        <nav aria-label="Transactions pages" class="order-3 order-md-2 w-100 w-md-auto">
+            <ul class="pagination pagination-sm justify-content-center mb-0 flex-wrap">
+                <li class="page-item {% if not transactions.has_previous %}disabled{% endif %}">
+                    <a class="page-link" aria-label="Previous"
+                       href="?page={{ transactions.previous_page_number }}{% if base_query %}&{{ base_query }}{% endif %}">
+                        <i class="bi bi-chevron-left"></i>
+                    </a>
+                </li>
 
-            {% if transactions.has_next %}
-            <li class="page-item">
-                <a class="page-link" href="?page={{ transactions.next_page_number }}{% for k, v in request.GET.items %}{% if k != 'page' %}&{{ k }}={{ v }}{% endif %}{% endfor %}">Next</a>
-            </li>
-            <li class="page-item">
-                <a class="page-link" href="?page={{ transactions.paginator.num_pages }}{% for k, v in request.GET.items %}{% if k != 'page' %}&{{ k }}={{ v }}{% endif %}{% endfor %}">Last</a>
-            </li>
-            {% endif %}
-        </ul>
-    </nav>
+                {% for p in elided_range %}
+                    {% if p == transactions.paginator.ELLIPSIS %}
+                        <li class="page-item disabled"><span class="page-link">{{ p }}</span></li>
+                    {% elif p == transactions.number %}
+                        <li class="page-item active" aria-current="page">
+                            <span class="page-link">{{ p }}</span>
+                        </li>
+                    {% else %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ p }}{% if base_query %}&{{ base_query }}{% endif %}">{{ p }}</a>
+                        </li>
+                    {% endif %}
+                {% endfor %}
+
+                <li class="page-item {% if not transactions.has_next %}disabled{% endif %}">
+                    <a class="page-link" aria-label="Next"
+                       href="?page={{ transactions.next_page_number }}{% if base_query %}&{{ base_query }}{% endif %}">
+                        <i class="bi bi-chevron-right"></i>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+        {% endif %}
+
+        <!-- Page size -->
+        <div class="d-flex align-items-center gap-2 small text-muted order-2 order-md-3">
+            <label for="perPageSelect" class="mb-0">Per page</label>
+            <select id="perPageSelect" class="form-select form-select-sm" style="width:auto;"
+                    onchange="window.location.href='?per_page='+this.value{% if filter_query %}+'&{{ filter_query|escapejs }}'{% endif %};">
+                {% for choice in per_page_choices %}
+                <option value="{{ choice }}" {% if choice == per_page %}selected{% endif %}>{{ choice }}</option>
+                {% endfor %}
+            </select>
+        </div>
+    </div>
 </div>
 {% endif %}

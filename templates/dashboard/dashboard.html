@@ -3,6 +3,48 @@
 {% block title %}Dashboard{% endblock %}
 {% block page_title %}Dashboard{% endblock %}
 
+{% block extra_css %}
+<style>
+    .stat-spark { height: 34px; margin-top: .6rem; }
+    .forecast-banner {
+        display: flex; align-items: center; gap: .75rem; flex-wrap: wrap;
+        padding: .75rem 1.1rem; border-radius: 14px; margin-bottom: 1.25rem;
+        border: 1px solid var(--bs-border-color, rgba(0,0,0,.07));
+    }
+    .forecast-banner .fb-icon { font-size: 1.4rem; }
+    /* Spending calendar heatmap */
+    .cal-heatmap { display: flex; flex-direction: column; gap: 5px; }
+    .cal-week { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; }
+    .cal-head { font-size: .68rem; font-weight: 700; color: var(--bs-secondary-color, #94a3b8); text-align: center; }
+    .cal-cell {
+        aspect-ratio: 1 / 1; border-radius: 7px; position: relative;
+        display: flex; align-items: flex-start; justify-content: flex-end;
+        padding: 4px 5px; font-size: .66rem; font-weight: 600;
+    }
+    .cal-cell.empty { background: transparent; }
+    .cal-cell .cal-day { opacity: .75; }
+    .cal-l0 { background: rgba(99,102,241,.07); }
+    .cal-l1 { background: rgba(239,68,68,.18); }
+    .cal-l2 { background: rgba(239,68,68,.38); }
+    .cal-l3 { background: rgba(239,68,68,.6); color:#fff; }
+    .cal-l4 { background: rgba(239,68,68,.85); color:#fff; }
+    .cal-legend { display: flex; align-items: center; gap: 4px; justify-content: flex-end; font-size: .7rem; }
+    .cal-legend span { width: 14px; height: 14px; border-radius: 4px; }
+
+    /* ── Mobile tuning ── */
+    @media (max-width: 576px) {
+        .forecast-banner { padding: .7rem .85rem; }
+        .forecast-banner .ms-auto { margin-left: 0 !important; width: 100%; }
+        .forecast-banner .ms-auto .btn { width: 100%; }
+        .cal-cell { border-radius: 5px; padding: 2px 3px; font-size: .58rem; }
+        .cal-week { gap: 3px; }
+        .cal-heatmap { gap: 3px; }
+        .cal-legend span { width: 11px; height: 11px; }
+        .stat-spark { height: 28px; }
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="page-header d-flex flex-wrap justify-content-between align-items-center gap-3">
     <div>
@@ -26,6 +68,22 @@
     </div>
 </div>
 
+{% if forecast.is_current and forecast.pace_pct is not None %}
+<div class="forecast-banner" style="background: {% if forecast.on_track %}rgba(16,185,129,.08){% else %}rgba(245,158,11,.1){% endif %};">
+    <i class="bi {% if forecast.on_track %}bi-graph-down-arrow text-success{% else %}bi-graph-up-arrow text-warning{% endif %} fb-icon"></i>
+    <div>
+        <span class="fw-700">On pace to spend ₹{{ forecast.projected|floatformat:0 }} this month</span>
+        <span class="text-muted">
+            — {% if forecast.pace_pct > 0 %}{{ forecast.pace_pct }}% more{% elif forecast.pace_pct < 0 %}{{ forecast.pace_pct|cut:"-" }}% less{% else %}about the same{% endif %}
+            than last month (₹{{ forecast.prev_month|floatformat:0 }}).
+        </span>
+    </div>
+    <a href="{% url 'insights:insights' %}?month={{ selected_month }}&year={{ selected_year }}" class="btn btn-sm btn-outline-primary ms-auto">
+        View Insights <i class="bi bi-arrow-right"></i>
+    </a>
+</div>
+{% endif %}
+
 <!-- Summary Cards -->
 <div class="row gap-3 mb-4 stagger">
     <div class="col-md-3">
@@ -40,6 +98,7 @@
                 <i class="bi {% if income_change >= 0 %}bi-arrow-up-short{% else %}bi-arrow-down-short{% endif %}"></i>
                 {{ income_change|floatformat:1 }}% vs prev
             </div>
+            <div class="stat-spark"><canvas id="sparkIncome"></canvas></div>
         </div>
     </div>
     <div class="col-md-3">
@@ -54,6 +113,7 @@
                 <i class="bi {% if expense_change <= 0 %}bi-arrow-down-short{% else %}bi-arrow-up-short{% endif %}"></i>
                 {{ expense_change|floatformat:1 }}% vs prev
             </div>
+            <div class="stat-spark"><canvas id="sparkExpense"></canvas></div>
         </div>
     </div>
     <div class="col-md-3">
@@ -68,6 +128,7 @@
                 <i class="bi bi-percent"></i>
                 {{ monthly.savings_rate|floatformat:1 }}% saved
             </div>
+            <div class="stat-spark"><canvas id="sparkSavings"></canvas></div>
         </div>
     </div>
     <div class="col-md-3">
@@ -169,6 +230,102 @@
                         <span class="dc-value">₹{{ total_balance|floatformat:0 }}</span>
                         <span class="dc-label">Total</span>
                     </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Charts Row 3: Heatmap + Income sources -->
+<div class="row gap-3 mb-4">
+    <!-- Spending Calendar Heatmap -->
+    <div class="col-lg-7">
+        <div class="card h-100">
+            <div class="card-header d-flex flex-wrap gap-2 justify-content-between align-items-center">
+                <div>
+                    <h5 class="mb-0">Spending Calendar</h5>
+                    <span class="card-eyebrow">Daily expense intensity</span>
+                </div>
+                <div class="cal-legend">
+                    <small class="text-muted">Less</small>
+                    <span class="cal-l0"></span><span class="cal-l1"></span>
+                    <span class="cal-l2"></span><span class="cal-l3"></span><span class="cal-l4"></span>
+                    <small class="text-muted">More</small>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="cal-heatmap">
+                    <div class="cal-week">
+                        {% for label in spending_calendar.weekday_labels %}
+                        <div class="cal-head">{{ label }}</div>
+                        {% endfor %}
+                    </div>
+                    {% for week in spending_calendar.weeks %}
+                    <div class="cal-week">
+                        {% for cell in week %}
+                            {% if cell %}
+                            <div class="cal-cell cal-l{{ cell.level }}"
+                                 title="{{ cell.day }}: ₹{{ cell.amount|floatformat:0 }}">
+                                <span class="cal-day">{{ cell.day }}</span>
+                            </div>
+                            {% else %}
+                            <div class="cal-cell empty"></div>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Income by Source -->
+    <div class="col-lg-5">
+        <div class="card h-100">
+            <div class="card-header">
+                <h5 class="mb-0">Income by Source</h5>
+                <span class="card-eyebrow">This period</span>
+            </div>
+            <div class="card-body">
+                <div class="chart-container donut-wrap" style="height: 300px;">
+                    <canvas id="incomePieChart"></canvas>
+                    <div class="donut-center">
+                        <span class="dc-value">₹{{ monthly.income|floatformat:0 }}</span>
+                        <span class="dc-label">Total Income</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Charts Row 4: Cashflow + Weekday pattern -->
+<div class="row gap-3 mb-4">
+    <!-- Cumulative Cashflow -->
+    <div class="col-lg-8">
+        <div class="card h-100">
+            <div class="card-header">
+                <h5 class="mb-0">Cumulative Cashflow</h5>
+                <span class="card-eyebrow">Running net this month</span>
+            </div>
+            <div class="card-body">
+                <div class="chart-container" style="height: 260px;">
+                    <canvas id="cashflowChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Weekday Spending -->
+    <div class="col-lg-4">
+        <div class="card h-100">
+            <div class="card-header">
+                <h5 class="mb-0">Spending by Weekday</h5>
+                <span class="card-eyebrow">Which days cost most</span>
+            </div>
+            <div class="card-body">
+                <div class="chart-container" style="height: 260px;">
+                    <canvas id="weekdayChart"></canvas>
                 </div>
             </div>
         </div>
@@ -430,6 +587,111 @@ new Chart(document.getElementById('accountDonutChart'), {
         }
     }
 });
+
+// ── Income by Source (doughnut) ──
+new Chart(document.getElementById('incomePieChart'), {
+    type: 'doughnut',
+    data: {
+        labels: chartData.income_pie.labels,
+        datasets: [{
+            data: chartData.income_pie.data,
+            backgroundColor: chartData.income_pie.colors,
+            borderWidth: 2,
+            borderColor: getChartDefaults().bgColor,
+            hoverOffset: 6,
+        }]
+    },
+    options: {
+        responsive: true, maintainAspectRatio: false,
+        cutout: '68%',
+        plugins: {
+            legend: { position: 'bottom' },
+            tooltip: {
+                callbacks: {
+                    label: (ctx) => {
+                        const total = ctx.dataset.data.reduce((a, b) => a + b, 0);
+                        const pct = total ? Math.round(ctx.parsed / total * 100) : 0;
+                        return ` ${ctx.label}: ${fmtINR(ctx.parsed)} (${pct}%)`;
+                    }
+                }
+            }
+        }
+    }
+});
+
+// ── Cumulative Cashflow (line) ──
+new Chart(document.getElementById('cashflowChart'), {
+    type: 'line',
+    data: {
+        labels: chartData.cashflow.labels,
+        datasets: [{
+            label: 'Net',
+            data: chartData.cashflow.data,
+            borderColor: '#6366f1',
+            backgroundColor: vGradient('rgba(99,102,241,0.25)', 'rgba(99,102,241,0)'),
+            tension: 0.35, fill: true,
+        }]
+    },
+    options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: {
+            legend: { display: false },
+            tooltip: { callbacks: { label: (ctx) => `Net: ${fmtINR(ctx.parsed.y)}` } },
+        },
+        scales: {
+            x: { grid: { display: false }, ticks: { maxTicksLimit: 12, maxRotation: 0 } },
+            y: { grid: { drawBorder: false }, ticks: { callback: (v) => fmtINRCompact(v) } },
+        }
+    }
+});
+
+// ── Spending by Weekday (bar) ──
+new Chart(document.getElementById('weekdayChart'), {
+    type: 'bar',
+    data: {
+        labels: chartData.weekday.labels,
+        datasets: [{
+            label: 'Spent',
+            data: chartData.weekday.data,
+            backgroundColor: vGradient('rgba(139,92,246,0.85)', 'rgba(139,92,246,0.35)'),
+            borderRadius: 6,
+            maxBarThickness: 28,
+        }]
+    },
+    options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false }, tooltip: moneyTooltip },
+        scales: { x: { grid: { display: false } }, y: moneyYAxis },
+    }
+});
+
+// ── Stat-card sparklines ──
+function sparkline(id, data, color) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    new Chart(el, {
+        type: 'line',
+        data: {
+            labels: chartData.sparklines.labels,
+            datasets: [{
+                data: data,
+                borderColor: color,
+                backgroundColor: vGradient(color.replace('rgb', 'rgba').replace(')', ',0.22)'), 'rgba(0,0,0,0)'),
+                borderWidth: 2, tension: 0.4, fill: true,
+                pointRadius: 0, pointHoverRadius: 3,
+            }]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: { legend: { display: false }, tooltip: { enabled: false } },
+            scales: { x: { display: false }, y: { display: false } },
+            elements: { line: { borderWidth: 2 } },
+        }
+    });
+}
+sparkline('sparkIncome', chartData.sparklines.income, 'rgb(16,185,129)');
+sparkline('sparkExpense', chartData.sparklines.expense, 'rgb(239,68,68)');
+sparkline('sparkSavings', chartData.sparklines.savings, 'rgb(99,102,241)');
 
 // ── Filter Handler ──
 function updateDates() {
