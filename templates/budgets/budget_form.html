@@ -1,0 +1,107 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ title }}{% endblock %}
+{% block page_title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="page-header mb-4">
+    <h1>{{ title }}</h1>
+    <p>Set a monthly spending limit and get alerted as you approach it</p>
+</div>
+
+<div class="row">
+    <div class="col-md-7">
+        <div class="card">
+            <div class="card-body">
+                <form method="post" class="needs-validation">
+                    {% csrf_token %}
+
+                    {% if form.non_field_errors %}
+                    <div class="alert alert-danger">{{ form.non_field_errors|join:', ' }}</div>
+                    {% endif %}
+
+                    <div class="mb-3">
+                        <label for="{{ form.budget_type.id_for_label }}" class="form-label">Budget Type</label>
+                        {{ form.budget_type }}
+                        {% if form.budget_type.errors %}<div class="invalid-feedback d-block">{{ form.budget_type.errors|join:', ' }}</div>{% endif %}
+                        <small class="form-text text-muted d-block mt-1">Category = limit one category · Overall = total monthly cap</small>
+                    </div>
+
+                    <div class="mb-3" id="categoryField">
+                        <label for="{{ form.category.id_for_label }}" class="form-label">Category</label>
+                        {{ form.category }}
+                        {% if form.category.errors %}<div class="invalid-feedback d-block">{{ form.category.errors|join:', ' }}</div>{% endif %}
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="{{ form.amount.id_for_label }}" class="form-label">Monthly Limit (₹)</label>
+                                {{ form.amount }}
+                                {% if form.amount.errors %}<div class="invalid-feedback d-block">{{ form.amount.errors|join:', ' }}</div>{% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="{{ form.alert_threshold.id_for_label }}" class="form-label">Alert Threshold (%)</label>
+                                {{ form.alert_threshold }}
+                                {% if form.alert_threshold.errors %}<div class="invalid-feedback d-block">{{ form.alert_threshold.errors|join:', ' }}</div>{% endif %}
+                                <small class="form-text text-muted d-block mt-1">Warn at this % of the limit</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3" id="groupField">
+                        <label for="{{ form.group.id_for_label }}" class="form-label">Group / Envelope <span class="text-muted">(optional)</span></label>
+                        {{ form.group }}
+                        {% if form.group.errors %}<div class="invalid-feedback d-block">{{ form.group.errors|join:', ' }}</div>{% endif %}
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="{{ form.note.id_for_label }}" class="form-label">Note <span class="text-muted">(optional)</span></label>
+                        {{ form.note }}
+                    </div>
+
+                    <div class="mb-4">
+                        <div class="form-check">
+                            {{ form.is_active }}
+                            <label for="{{ form.is_active.id_for_label }}" class="form-check-label">Active</label>
+                        </div>
+                    </div>
+
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg"></i> {{ btn_text }}</button>
+                        <a href="{% url 'budgets:overview' %}" class="btn btn-outline-secondary"><i class="bi bi-x-lg"></i> Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-5">
+        <div class="card">
+            <div class="card-header"><h5 class="mb-0">How it works</h5></div>
+            <div class="card-body">
+                <ul class="text-muted small mb-0" style="line-height: 1.9;">
+                    <li>Spending is tracked live against this month's expense transactions.</li>
+                    <li>The progress bar turns <span class="text-warning fw-600">amber</span> at your alert threshold and <span class="text-danger fw-600">red</span> when you go over.</li>
+                    <li>A projection estimates month-end spend from your current pace and flags budgets likely to be exceeded.</li>
+                    <li>Group budgets into envelopes (e.g. Essentials) to track a shared limit.</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Hide the category field when budget type is "overall".
+(function () {
+    const typeSel = document.getElementById('id_budget_type');
+    const catField = document.getElementById('categoryField');
+    function sync() {
+        catField.style.display = (typeSel.value === 'overall') ? 'none' : '';
+    }
+    if (typeSel) { typeSel.addEventListener('change', sync); sync(); }
+})();
+</script>
+{% endblock %}

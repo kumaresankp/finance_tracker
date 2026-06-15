@@ -121,9 +121,43 @@ def seed_data(request):
                         )
                         transactions_created += 1
 
+        # ── Demo budgets, group, and overall cap ──
+        from budgets.models import Budget, BudgetGroup
+
+        cat_by_name = {c.name: c for c in exp_category_objs}
+        budget_amounts = {
+            'Food & Dining': 8000, 'Groceries': 6000, 'Transport': 3000,
+            'Shopping': 5000, 'Entertainment': 2500, 'Utilities': 4000,
+        }
+        for name, amount in budget_amounts.items():
+            cat = cat_by_name.get(name)
+            if cat:
+                Budget.objects.get_or_create(
+                    budget_type='category', category=cat,
+                    defaults={'amount': Decimal(str(amount)), 'alert_threshold': 80},
+                )
+
+        # Overall monthly cap
+        Budget.objects.get_or_create(
+            budget_type='overall', category=None,
+            defaults={'amount': Decimal('35000'), 'alert_threshold': 85},
+        )
+
+        # An "Essentials" envelope grouping a few categories
+        group, _ = BudgetGroup.objects.get_or_create(
+            name='Essentials',
+            defaults={'color': '#10b981', 'icon': 'bi-basket', 'sort_order': 1},
+        )
+        for name in ('Groceries', 'Utilities', 'Transport'):
+            cat = cat_by_name.get(name)
+            if cat:
+                Budget.objects.filter(
+                    budget_type='category', category=cat
+                ).update(group=group)
+
         messages.success(
             request,
-            f'Sample data created! {transactions_created} transactions added.'
+            f'Sample data created! {transactions_created} transactions and demo budgets added.'
         )
         return redirect('dashboard:dashboard')
 
@@ -135,7 +169,10 @@ def clear_data(request):
     if request.method == 'POST':
         from transactions.models import Transaction, Category
         from accounts.models import BankAccount
+        from budgets.models import Budget, BudgetGroup
 
+        Budget.objects.all().delete()
+        BudgetGroup.objects.all().delete()
         Transaction.objects.all().delete()
         Category.objects.all().delete()
         BankAccount.objects.all().delete()

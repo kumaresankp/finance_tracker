@@ -22,6 +22,7 @@ from transactions.analytics import (
     get_stat_sparklines,
     get_spend_forecast,
 )
+from budgets.services import get_budget_status, get_budget_alerts
 from accounts.models import BankAccount
 from transactions.models import Transaction
 
@@ -58,6 +59,10 @@ def dashboard_view(request):
     spending_calendar = get_spending_calendar(year, month)
     sparklines = get_stat_sparklines(year, month)
     forecast = get_spend_forecast(year, month)
+
+    # ── Budget status (top 5 by usage) + alerts ──
+    budget_status = get_budget_status(year, month)[:5]
+    budget_alerts = get_budget_alerts(year, month)
 
     # ── Previous Month Comparison ──
     prev_month = month - 1 if month > 1 else 12
@@ -129,6 +134,8 @@ def dashboard_view(request):
         'account_dist': account_dist,
         'spending_calendar': spending_calendar,
         'forecast': forecast,
+        'budget_status': budget_status,
+        'budget_alerts': budget_alerts,
         'chart_data_json': json.dumps(chart_data, default=decimal_default),
         'selected_year': year,
         'selected_month': month,

@@ -12,6 +12,7 @@ from transactions.analytics import (
     detect_recurring,
     get_narrative_insights,
 )
+from budgets.services import get_budget_alerts, get_budget_summary
 
 
 def decimal_default(obj):
@@ -31,6 +32,30 @@ def insights_view(request):
     forecast = get_spend_forecast(year, month)
     recurring = detect_recurring()
     narratives = get_narrative_insights(year, month)
+
+    # Fold budget alerts into the anomaly list, and add a narrative card.
+    budget_alerts = get_budget_alerts(year, month)
+    anomalies = anomalies + [
+        {'level': a['level'] if a['level'] != 'danger' else 'warning',
+         'title': a['title'], 'detail': a['detail'],
+         'category': None, 'amount': None, 'pct_change': None}
+        for a in budget_alerts
+    ]
+    budget_summary = get_budget_summary(year, month)
+    if budget_summary['count']:
+        over = budget_summary['over_count']
+        warn = budget_summary['warning_count']
+        if over or warn:
+            narratives.insert(0, {
+                'icon': 'bi-pie-chart', 'tone': 'warning',
+                'text': (f"{over} budget(s) over limit and {warn} nearing their "
+                         f"threshold this month."),
+            })
+        else:
+            narratives.insert(0, {
+                'icon': 'bi-check-circle', 'tone': 'success',
+                'text': f"All {budget_summary['count']} budgets are on track this month.",
+            })
 
     # Data for the health-score gauge (doughnut) rendered client-side.
     chart_data = {

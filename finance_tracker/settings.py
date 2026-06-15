@@ -21,6 +21,7 @@ INSTALLED_APPS = [
     'transactions',
     'dashboard',
     'insights',
+    'budgets',
     'reports',
     'settings_app',
 ]

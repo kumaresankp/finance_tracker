@@ -1,0 +1,297 @@
+{% extends 'base.html' %}
+
+{% block title %}Budgets{% endblock %}
+{% block page_title %}Budgets{% endblock %}
+
+{% block extra_css %}
+<style>
+    .budget-row { padding: 1rem 1.1rem; border-radius: 14px; border: 1px solid var(--bs-border-color, rgba(0,0,0,.07)); margin-bottom: .85rem; }
+    .budget-row:last-child { margin-bottom: 0; }
+    .budget-bar { height: 10px; border-radius: 8px; background: rgba(99,102,241,.12); overflow: hidden; position: relative; }
+    .budget-bar > span { display: block; height: 100%; border-radius: 8px; transition: width .4s ease; }
+    .budget-bar .threshold-tick { position: absolute; top: -2px; bottom: -2px; width: 2px; background: rgba(15,23,42,.35); }
+    .b-under > span { background: #10b981; }
+    .b-warning > span { background: #f59e0b; }
+    .b-over > span { background: #ef4444; }
+    .budget-meta { font-variant-numeric: tabular-nums; }
+    .pill-badge { font-size: .68rem; font-weight: 700; padding: .12rem .5rem; border-radius: 99px; }
+    @media (max-width: 576px) {
+        .budget-row { padding: .8rem .85rem; }
+        .budget-head { flex-wrap: wrap; gap: .35rem; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header d-flex flex-wrap justify-content-between align-items-center gap-3">
+    <div>
+        <h1>Budgets</h1>
+        <p>Set spending limits and track them in real time</p>
+    </div>
+    <div class="d-flex flex-wrap gap-2 align-items-center">
+        <div class="filter-pill">
+            <i class="bi bi-calendar3"></i>
+            <select class="form-select" id="monthSelect" onchange="updateDates()" aria-label="Month">
+                {% for id, name in months %}
+                <option value="{{ id }}" {% if id == selected_month %}selected{% endif %}>{{ name }}</option>
+                {% endfor %}
+            </select>
+            <span class="filter-sep"></span>
+            <select class="form-select" id="yearSelect" onchange="updateDates()" aria-label="Year">
+                {% for y in years %}
+                <option value="{{ y }}" {% if y == selected_year %}selected{% endif %}>{{ y }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="dropdown">
+            <button class="btn btn-primary dropdown-toggle" data-bs-toggle="dropdown">
+                <i class="bi bi-plus-lg"></i> New
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end">
+                <li><a class="dropdown-item" href="{% url 'budgets:create' %}"><i class="bi bi-tag me-2"></i>Budget</a></li>
+                <li><a class="dropdown-item" href="{% url 'budgets:group_create' %}"><i class="bi bi-collection me-2"></i>Group / Envelope</a></li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+{% if not has_budgets %}
+<div class="card">
+    <div class="card-body">
+        <div class="empty-state py-5">
+            <i class="bi bi-pie-chart"></i>
+            <h5>No budgets yet</h5>
+            <p class="text-muted mb-3">Create your first spending limit to start tracking against your transactions.</p>
+            <a href="{% url 'budgets:create' %}" class="btn btn-primary"><i class="bi bi-plus-lg"></i> Create Budget</a>
+        </div>
+    </div>
+</div>
+{% else %}
+
+<!-- Summary stat cards -->
+<div class="row gap-3 mb-4 stagger">
+    <div class="col-md-3 col-6">
+        <div class="stat-card" style="--accent:#6366f1;">
+            <div class="stat-icon" style="background: rgba(99,102,241,.15); color:#6366f1;"><i class="bi bi-wallet2"></i></div>
+            <div class="stat-value">₹{{ summary.total_budgeted|floatformat:0 }}</div>
+            <div class="stat-label">Total Budgeted</div>
+        </div>
+    </div>
+    <div class="col-md-3 col-6">
+        <div class="stat-card" style="--accent:#ef4444;">
+            <div class="stat-icon" style="background: rgba(239,68,68,.15); color:#ef4444;"><i class="bi bi-cash-stack"></i></div>
+            <div class="stat-value">₹{{ summary.total_spent|floatformat:0 }}</div>
+            <div class="stat-label">Total Spent ({{ summary.pct_used|floatformat:0 }}%)</div>
+        </div>
+    </div>
+    <div class="col-md-3 col-6">
+        <div class="stat-card" style="--accent:#10b981;">
+            <div class="stat-icon" style="background: rgba(16,185,129,.15); color:#10b981;"><i class="bi bi-piggy-bank"></i></div>
+            <div class="stat-value">₹{{ summary.total_remaining|floatformat:0 }}</div>
+            <div class="stat-label">Remaining</div>
+        </div>
+    </div>
+    <div class="col-md-3 col-6">
+        <div class="stat-card" style="--accent:#f59e0b;">
+            <div class="stat-icon" style="background: rgba(245,158,11,.15); color:#f59e0b;"><i class="bi bi-exclamation-triangle"></i></div>
+            <div class="stat-value">{{ summary.over_count }}</div>
+            <div class="stat-label">Over Budget</div>
+        </div>
+    </div>
+</div>
+
+<!-- Alerts -->
+{% if alerts %}
+<div class="card mb-4">
+    <div class="card-header"><h5 class="mb-0">Budget Alerts</h5><span class="card-eyebrow">Attention needed</span></div>
+    <div class="card-body">
+        {% for a in alerts %}
+        <div class="alert {% if a.level == 'danger' %}alert-danger{% else %}alert-warning{% endif %} d-flex align-items-start gap-2 {% if not forloop.last %}mb-2{% else %}mb-0{% endif %}">
+            <i class="bi {% if a.level == 'danger' %}bi-x-octagon{% else %}bi-exclamation-triangle{% endif %} fs-5"></i>
+            <div><div class="fw-700">{{ a.title }}</div><small>{{ a.detail }}</small></div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+<div class="row gap-3 mb-4">
+    <!-- Overall budget -->
+    {% if overall %}
+    <div class="col-lg-5">
+        <div class="card h-100">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <div><h5 class="mb-0">Overall Monthly</h5><span class="card-eyebrow">Total spending cap</span></div>
+                <div class="dropdown">
+                    <button class="btn btn-sm btn-ghost" data-bs-toggle="dropdown"><i class="bi bi-three-dots-vertical"></i></button>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        <li><a class="dropdown-item" href="{% url 'budgets:edit' overall.id %}"><i class="bi bi-pencil me-2"></i>Edit</a></li>
+                        <li><a class="dropdown-item text-danger" href="{% url 'budgets:delete' overall.id %}"><i class="bi bi-trash me-2"></i>Delete</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-end mb-2">
+                    <div><span class="fs-3 fw-800">₹{{ overall.spent|floatformat:0 }}</span>
+                        <span class="text-muted">/ ₹{{ overall.amount|floatformat:0 }}</span></div>
+                    <span class="pill-badge {% if overall.status == 'over' %}bg-danger-subtle text-danger{% elif overall.status == 'warning' %}bg-warning-subtle text-warning{% else %}bg-success-subtle text-success{% endif %}">
+                        {{ overall.pct_used|floatformat:0 }}%
+                    </span>
+                </div>
+                <div class="budget-bar b-{{ overall.status }}">
+                    <span style="width: {{ overall.pct_bar }}%;"></span>
+                    <span class="threshold-tick" style="left: {{ overall.threshold }}%;"></span>
+                </div>
+                <div class="d-flex justify-content-between mt-2 budget-meta">
+                    <small class="text-muted">Remaining: ₹{{ overall.remaining|floatformat:0 }}</small>
+                    {% if overall.projected %}<small class="text-muted">Projected: ₹{{ overall.projected|floatformat:0 }}</small>{% endif %}
+                </div>
+                {% if overall.will_exceed %}
+                <div class="alert alert-warning mt-3 mb-0 py-2"><small><i class="bi bi-graph-up-arrow me-1"></i>On pace to exceed this budget.</small></div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Budget vs Actual history -->
+    <div class="col-lg-7">
+        <div class="card h-100">
+            <div class="card-header"><h5 class="mb-0">Budget vs Actual</h5><span class="card-eyebrow">6-month history</span></div>
+            <div class="card-body">
+                <div class="chart-container" style="height: 280px;"><canvas id="budgetHistoryChart"></canvas></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Category budgets -->
+<div class="card mb-4">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <div><h5 class="mb-0">Category Budgets</h5><span class="card-eyebrow">{{ category_budgets|length }} active</span></div>
+        <a href="{% url 'budgets:create' %}" class="btn btn-sm btn-outline-primary"><i class="bi bi-plus-lg"></i> Add</a>
+    </div>
+    <div class="card-body">
+        {% for b in category_budgets %}
+        <div class="budget-row">
+            <div class="budget-head d-flex justify-content-between align-items-center mb-2">
+                <div class="d-flex align-items-center gap-2">
+                    <div class="icon-circle" style="background: {{ b.color }}20; color: {{ b.color }};"><i class="bi {{ b.icon }}"></i></div>
+                    <div>
+                        <div class="fw-600">{{ b.name }}</div>
+                        <small class="text-muted budget-meta">₹{{ b.spent|floatformat:0 }} of ₹{{ b.amount|floatformat:0 }}</small>
+                    </div>
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                    {% if b.will_exceed %}<span class="pill-badge bg-warning-subtle text-warning"><i class="bi bi-graph-up-arrow"></i> Projected over</span>{% endif %}
+                    <span class="pill-badge {% if b.status == 'over' %}bg-danger-subtle text-danger{% elif b.status == 'warning' %}bg-warning-subtle text-warning{% else %}bg-success-subtle text-success{% endif %}">{{ b.pct_used|floatformat:0 }}%</span>
+                    <div class="dropdown">
+                        <button class="btn btn-sm btn-ghost" data-bs-toggle="dropdown"><i class="bi bi-three-dots-vertical"></i></button>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li><a class="dropdown-item" href="{% url 'budgets:edit' b.id %}"><i class="bi bi-pencil me-2"></i>Edit</a></li>
+                            <li><a class="dropdown-item text-danger" href="{% url 'budgets:delete' b.id %}"><i class="bi bi-trash me-2"></i>Delete</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="budget-bar b-{{ b.status }}">
+                <span style="width: {{ b.pct_bar }}%;"></span>
+                <span class="threshold-tick" style="left: {{ b.threshold }}%;"></span>
+            </div>
+            <div class="d-flex justify-content-between mt-1 budget-meta">
+                <small class="{% if b.remaining < 0 %}text-danger{% else %}text-muted{% endif %}">
+                    {% if b.remaining < 0 %}Over by ₹{{ b.remaining|floatformat:0|cut:"-" }}{% else %}₹{{ b.remaining|floatformat:0 }} left{% endif %}
+                </small>
+                {% if b.projected %}<small class="text-muted">Projected ₹{{ b.projected|floatformat:0 }}</small>{% endif %}
+            </div>
+        </div>
+        {% empty %}
+        <div class="empty-state py-4"><i class="bi bi-tags"></i><h6>No category budgets</h6><p>Add one to track a category.</p></div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Groups / Envelopes -->
+{% if groups %}
+<div class="row gap-3">
+    {% for g in groups %}
+    <div class="col-lg-6">
+        <div class="card h-100">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <div class="d-flex align-items-center gap-2">
+                    <div class="icon-circle" style="background: {{ g.color }}20; color: {{ g.color }};"><i class="bi {{ g.icon }}"></i></div>
+                    <div><h5 class="mb-0">{{ g.name }}</h5><span class="card-eyebrow">{{ g.member_count }} categor{{ g.member_count|pluralize:"y,ies" }}{% if g.has_shared_cap %} · shared cap{% endif %}</span></div>
+                </div>
+                <div class="dropdown">
+                    <button class="btn btn-sm btn-ghost" data-bs-toggle="dropdown"><i class="bi bi-three-dots-vertical"></i></button>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        <li><a class="dropdown-item" href="{% url 'budgets:group_edit' g.group.id %}"><i class="bi bi-pencil me-2"></i>Edit</a></li>
+                        <li><a class="dropdown-item text-danger" href="{% url 'budgets:group_delete' g.group.id %}"><i class="bi bi-trash me-2"></i>Delete</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-end mb-2">
+                    <div><span class="fs-5 fw-800">₹{{ g.spent|floatformat:0 }}</span> <span class="text-muted">/ ₹{{ g.limit|floatformat:0 }}</span></div>
+                    <span class="pill-badge {% if g.pct_used >= 100 %}bg-danger-subtle text-danger{% elif g.pct_used >= 80 %}bg-warning-subtle text-warning{% else %}bg-success-subtle text-success{% endif %}">{{ g.pct_used|floatformat:0 }}%</span>
+                </div>
+                <div class="budget-bar {% if g.pct_used >= 100 %}b-over{% elif g.pct_used >= 80 %}b-warning{% else %}b-under{% endif %}">
+                    <span style="width: {{ g.pct_bar }}%;"></span>
+                </div>
+                {% if g.members %}
+                <div class="mt-3 d-flex flex-column gap-2">
+                    {% for m in g.members %}
+                    <div class="d-flex justify-content-between align-items-center">
+                        <small class="d-flex align-items-center gap-2"><i class="bi {{ m.icon }}" style="color: {{ m.color }};"></i> {{ m.name }}</small>
+                        <small class="budget-meta text-muted">₹{{ m.spent|floatformat:0 }} / ₹{{ m.amount|floatformat:0 }}</small>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const budgetData = {{ chart_data_json|safe }};
+
+const histEl = document.getElementById('budgetHistoryChart');
+if (histEl) {
+    new Chart(histEl, {
+        type: 'bar',
+        data: {
+            labels: budgetData.history.labels,
+            datasets: [
+                { label: 'Budget', data: budgetData.history.budget,
+                  backgroundColor: 'rgba(99,102,241,0.35)', borderColor: '#6366f1',
+                  borderWidth: 1.5, borderRadius: 6, maxBarThickness: 26 },
+                { label: 'Actual', data: budgetData.history.actual,
+                  backgroundColor: vGradient('rgba(239,68,68,0.85)', 'rgba(239,68,68,0.4)'),
+                  borderRadius: 6, maxBarThickness: 26 },
+            ]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: {
+                legend: { position: 'top', align: 'end' },
+                tooltip: { callbacks: { label: (ctx) => `${ctx.dataset.label}: ${fmtINR(ctx.parsed.y)}` } },
+            },
+            scales: { x: { grid: { display: false } }, y: { beginAtZero: true, ticks: { callback: (v) => fmtINRCompact(v) } } },
+        }
+    });
+}
+
+function updateDates() {
+    const month = document.getElementById('monthSelect').value;
+    const year = document.getElementById('yearSelect').value;
+    window.location.href = `?month=${month}&year=${year}`;
+}
+</script>
+{% endblock %}

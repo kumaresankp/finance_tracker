@@ -12,6 +12,7 @@ urlpatterns = [
     path('', include('dashboard.urls')),
     path('accounts/', include('accounts.urls')),
     path('transactions/', include('transactions.urls')),
+    path('budgets/', include('budgets.urls')),
     path('insights/', include('insights.urls')),
     path('reports/', include('reports.urls')),
     path('settings/', include('settings_app.urls')),
