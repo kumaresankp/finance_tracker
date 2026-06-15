@@ -1123,6 +1123,20 @@ function formatCurrency(amount, currency = '₹') {
     }).format(amount);
 }
 
+// ── VERTICAL GRADIENT HELPER (shared, scriptable) ───
+// Fades a color from top to bottom of the chart area. Used by multiple pages.
+function vGradient(from, to) {
+    return (ctx) => {
+        const { chart } = ctx;
+        const { ctx: c, chartArea } = chart;
+        if (!chartArea) return from;
+        const g = c.createLinearGradient(0, chartArea.top, 0, chartArea.bottom);
+        g.addColorStop(0, from);
+        g.addColorStop(1, to);
+        return g;
+    };
+}
+
 // ── CHART.JS DEFAULTS ───────────────────────────────
 function getChartDefaults() {
     const isDark = document.documentElement.getAttribute('data-bs-theme') === 'dark';

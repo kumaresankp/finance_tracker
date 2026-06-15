@@ -464,18 +464,7 @@
 <script>
 const chartData = {{ chart_data_json|safe }};
 
-// Vertical gradient helper (scriptable) — fades a color from top to bottom.
-function vGradient(from, to) {
-    return (ctx) => {
-        const { chart } = ctx;
-        const { ctx: c, chartArea } = chart;
-        if (!chartArea) return from;
-        const g = c.createLinearGradient(0, chartArea.top, 0, chartArea.bottom);
-        g.addColorStop(0, from);
-        g.addColorStop(1, to);
-        return g;
-    };
-}
+// vGradient() is now a shared global helper in base.html.
 
 const moneyTooltip = {
     callbacks: {
