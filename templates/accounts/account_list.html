@@ -9,9 +9,14 @@
         <h1>Accounts</h1>
         <p>Manage your bank accounts and wallets</p>
     </div>
-    <a href="{% url 'accounts:create' %}" class="btn btn-primary">
-        <i class="bi bi-plus-lg"></i> New Account
-    </a>
+    <div class="d-flex align-items-center gap-2">
+        <button type="button" class="balance-toggle btn btn-outline-secondary" aria-label="Show or hide balances" title="Show/hide balances">
+            <i class="bi bi-eye"></i>
+        </button>
+        <a href="{% url 'accounts:create' %}" class="btn btn-primary">
+            <i class="bi bi-plus-lg"></i> New Account
+        </a>
+    </div>
 </div>
 
 <!-- Active Accounts Section -->
@@ -69,7 +74,9 @@
 
                         <div class="mb-3">
                             <div class="text-muted" style="font-size: 0.85rem;">Balance</div>
-                            <div class="fs-5 fw-700">₹{{ account.balance|floatformat:2 }}</div>
+                            <div class="fs-5 fw-700">
+                                <span class="balance-amount" data-amount="₹{{ account.balance|floatformat:2 }}">₹••••••</span>
+                            </div>
                         </div>
 
                         <a href="{% url 'accounts:detail' account.id %}" class="btn btn-sm btn-outline-primary w-100">
@@ -101,7 +108,12 @@
             <div class="stat-icon" style="background: rgba(99, 102, 241, 0.15); color: #6366f1;">
                 <i class="bi bi-wallet2"></i>
             </div>
-            <div class="stat-value">₹{{ total_balance|floatformat:2 }}</div>
+            <div class="stat-value d-flex align-items-center gap-2">
+                <span class="balance-amount" data-amount="₹{{ total_balance|floatformat:2 }}">₹••••••</span>
+                <button type="button" class="balance-toggle" aria-label="Show or hide balances" title="Show/hide balance">
+                    <i class="bi bi-eye"></i>
+                </button>
+            </div>
             <div class="stat-label">Total Balance</div>
         </div>
     </div>
@@ -145,7 +157,7 @@
                             {{ account.name }}
                         </td>
                         <td>{{ account.get_account_type_display }}</td>
-                        <td>₹{{ account.balance|floatformat:2 }}</td>
+                        <td><span class="balance-amount" data-amount="₹{{ account.balance|floatformat:2 }}">₹••••••</span></td>
                         <td>
                             <a href="{% url 'accounts:edit' account.id %}" class="btn btn-sm btn-outline-primary">Activate</a>
                         </td>

@@ -795,6 +795,15 @@
         @media (prefers-reduced-motion: reduce) {
             .stagger > [class*="col-"], .fade-in-up, .slide-in-right { animation: none !important; }
         }
+
+        /* ── BALANCE VISIBILITY TOGGLE (shared) ──────── */
+        .balance-toggle {
+            border: none; background: transparent; cursor: pointer;
+            color: var(--text-muted, #94a3b8); padding: 2px 5px; line-height: 1;
+            font-size: .85rem; border-radius: 6px; transition: color .15s, background .15s;
+        }
+        .balance-toggle:hover { color: var(--text-primary); background: var(--border-color); }
+        .balance-amount.is-hidden { letter-spacing: .08em; }
     </style>
 
     {% block extra_css %}{% endblock %}
@@ -1187,6 +1196,48 @@ function fmtINRCompact(n) {
     Chart.defaults.elements.point.radius = 0;
     Chart.defaults.elements.point.hoverRadius = 5;
     Chart.defaults.elements.line.borderWidth = 2.5;
+})();
+
+// ── BALANCE VISIBILITY TOGGLE (shared across all pages) ──
+// Any `.balance-amount` span (real value in data-amount) is masked by default;
+// any `.balance-toggle` button flips visibility. The choice persists in
+// localStorage so every page respects one app-wide preference.
+(function () {
+    const KEY = 'showBalances';
+    const MASK = '₹••••••';
+
+    function init() {
+        const amounts = document.querySelectorAll('.balance-amount');
+        const toggles = document.querySelectorAll('.balance-toggle');
+        if (!amounts.length) return;
+
+        let show = localStorage.getItem(KEY) === '1';
+
+        function apply() {
+            amounts.forEach(el => {
+                el.textContent = show ? (el.dataset.amount || '') : MASK;
+                el.classList.toggle('is-hidden', !show);
+            });
+            toggles.forEach(btn => {
+                const icon = btn.querySelector('i');
+                if (icon) icon.className = show ? 'bi bi-eye-slash' : 'bi bi-eye';
+                btn.setAttribute('title', show ? 'Hide balance' : 'Show balance');
+            });
+        }
+
+        apply();
+        toggles.forEach(btn => btn.addEventListener('click', () => {
+            show = !show;
+            localStorage.setItem(KEY, show ? '1' : '0');
+            apply();
+        }));
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+    } else {
+        init();
+    }
 })();
 </script>
 
