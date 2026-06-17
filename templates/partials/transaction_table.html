@@ -89,10 +89,14 @@
         <nav aria-label="Transactions pages" class="order-3 order-md-2 w-100 w-md-auto">
             <ul class="pagination pagination-sm justify-content-center mb-0 flex-wrap">
                 <li class="page-item {% if not transactions.has_previous %}disabled{% endif %}">
+                    {% if transactions.has_previous %}
                     <a class="page-link" aria-label="Previous"
                        href="?page={{ transactions.previous_page_number }}{% if base_query %}&{{ base_query }}{% endif %}">
                         <i class="bi bi-chevron-left"></i>
                     </a>
+                    {% else %}
+                    <span class="page-link"><i class="bi bi-chevron-left"></i></span>
+                    {% endif %}
                 </li>
 
                 {% for p in elided_range %}
@@ -110,10 +114,14 @@
                 {% endfor %}
 
                 <li class="page-item {% if not transactions.has_next %}disabled{% endif %}">
+                    {% if transactions.has_next %}
                     <a class="page-link" aria-label="Next"
                        href="?page={{ transactions.next_page_number }}{% if base_query %}&{{ base_query }}{% endif %}">
                         <i class="bi bi-chevron-right"></i>
                     </a>
+                    {% else %}
+                    <span class="page-link"><i class="bi bi-chevron-right"></i></span>
+                    {% endif %}
                 </li>
             </ul>
         </nav>
