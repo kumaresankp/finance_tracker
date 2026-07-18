@@ -181,3 +181,53 @@ def clear_data(request):
         return redirect('settings_app:settings')
 
     return redirect('settings_app:settings')
+
+
+def about_view(request):
+    context = {'page_title': 'About'}
+    return render(request, 'settings_app/about.html', context)
+
+
+from .forms import ContactForm
+from .models import ContactMessage
+
+
+def contact_view(request):
+    if request.method == 'POST':
+        form = ContactForm(request.POST)
+        if form.is_valid():
+            name = form.cleaned_data['name']
+            email = form.cleaned_data['email']
+            subject = form.cleaned_data.get('subject') or 'Contact form submission'
+            message_body = form.cleaned_data['message']
+
+            # Save to database instead of emailing
+            ContactMessage.objects.create(
+                name=name,
+                email=email,
+                subject=subject,
+                message=message_body,
+            )
+
+            messages.success(request, "Thank you! We'll get back to you soon.")
+            return redirect('settings_app:thank_you')
+    else:
+        form = ContactForm()
+
+    context = {'page_title': 'Contact', 'form': form}
+    return render(request, 'settings_app/contact.html', context)
+
+
+def thank_you_view(request):
+    context = {'page_title': 'Thank You'}
+    return render(request, 'settings_app/thank_you.html', context)
+
+
+def privacy_view(request):
+    context = {'page_title': 'Privacy Policy'}
+    return render(request, 'settings_app/privacy.html', context)
+
+
+def terms_view(request):
+    context = {'page_title': 'Terms & Conditions'}
+    return render(request, 'settings_app/terms.html', context)
