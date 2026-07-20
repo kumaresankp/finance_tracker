@@ -219,7 +219,11 @@ def contact_view(request):
 
 
 def thank_you_view(request):
-    context = {'page_title': 'Thank You'}
+    from django.conf import settings
+    context = {
+        'page_title': 'Thank You',
+        'google_ads_send_to': getattr(settings, 'GOOGLE_ADS_SEND_TO', None),
+    }
     return render(request, 'settings_app/thank_you.html', context)
 
 
