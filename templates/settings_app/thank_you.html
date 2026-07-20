@@ -28,20 +28,19 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 </script>
-{% endblock %}
-  {% if google_ads_send_to %}
-  <script>
-    document.addEventListener('DOMContentLoaded', function() {
-      try {
-        if (typeof gtag === 'function') {
-          gtag('event', 'conversion', { 'send_to': '{{ google_ads_send_to }}' });
-        } else {
-          console.warn('gtag not available — Google Ads conversion not sent');
-        }
-      } catch (e) {
-        console.error('Conversion tracking error', e);
+{% if google_ads_send_to %}
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    try {
+      if (typeof gtag === 'function') {
+        gtag('event', 'conversion', { 'send_to': '{{ google_ads_send_to }}' });
+      } else {
+        console.warn('gtag not available — Google Ads conversion not sent');
       }
-    });
-  </script>
-  {% endif %}
+    } catch (e) {
+      console.error('Conversion tracking error', e);
+    }
+  });
+</script>
+{% endif %}
 {% endblock %}
