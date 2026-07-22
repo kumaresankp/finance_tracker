@@ -1,46 +1,57 @@
 {% extends 'base.html' %}
+
 {% block title %}Thank You{% endblock %}
 {% block page_title %}Thank You{% endblock %}
+
 {% block content %}
 <div class="container">
-  <div class="card text-center">
-    <div class="card-body">
-      <i class="bi bi-check-circle text-success" style="font-size:48px"></i>
-      <h3 class="mt-3">Thank you!</h3>
-      <p class="text-muted">We'll get back to you soon.</p>
-      <a href="{% url 'dashboard:dashboard' %}" class="btn btn-primary mt-2">Return Home</a>
+    <div class="card text-center">
+        <div class="card-body py-5">
+            <i class="bi bi-check-circle-fill text-success" style="font-size:64px;"></i>
+
+            <h2 class="mt-4">Thank You!</h2>
+
+            <p class="text-muted mb-4">
+                Your message has been submitted successfully.
+                We'll get back to you as soon as possible.
+            </p>
+
+            <a href="{% url 'dashboard:dashboard' %}" class="btn btn-primary">
+                Return Home
+            </a>
+        </div>
     </div>
-  </div>
 </div>
 {% endblock %}
 
 {% block extra_js %}
 <script>
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
+
+    console.log("===== Google Ads Conversion Debug =====");
+
     if (typeof gtag === 'function') {
+
+        console.log("✓ gtag loaded successfully");
+        console.log("Sending Google Ads conversion...");
+
         gtag('event', 'conversion', {
             'send_to': 'AW-18247916559/suVRCM_x0NMcEI-4pP1D',
             'value': 1.0,
             'currency': 'INR'
         });
+
+        console.log("✓ Google Ads conversion event sent");
+        console.log("Conversion ID: AW-18247916559");
+        console.log("Conversion Label: suVRCM_x0NMcEI-4pP1D");
+
     } else {
-        console.warn('gtag not loaded');
+
+        console.error("✗ Google Ads gtag NOT loaded!");
+        console.error("Check that base.html includes the Google tag.");
+
     }
+
 });
 </script>
-{% if google_ads_send_to %}
-<script>
-  document.addEventListener('DOMContentLoaded', function() {
-    try {
-      if (typeof gtag === 'function') {
-        gtag('event', 'conversion', { 'send_to': '{{ google_ads_send_to }}' });
-      } else {
-        console.warn('gtag not available — Google Ads conversion not sent');
-      }
-    } catch (e) {
-      console.error('Conversion tracking error', e);
-    }
-  });
-</script>
-{% endif %}
 {% endblock %}
